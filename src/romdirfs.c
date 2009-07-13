@@ -36,6 +36,7 @@ typedef struct _romfile {
 /* Queue to hold multiple ROMDIR files */
 typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 
+static romfile_queue_t g_queue;
 
 /*
  * Parse file for ROMDIR entries and add them to the queue.
@@ -119,8 +120,10 @@ static int romfile_extract(int fd, romfile_t *file)
 {
 	int fd_out;
 
-	if (romfile_read(fd, file) < 0)
+	if (romfile_read(fd, file) < 0) {
+		perror("romfile_read");
 		return -1;
+	}
 
 	fd_out = open(file->name, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd_out == -1) {
@@ -134,71 +137,91 @@ static int romfile_extract(int fd, romfile_t *file)
 	close(fd_out);
 	return 0;
 }
-
-static const char *hello_str = "Hello World!\n";
-static const char *hello_path = "/hello";
-
+#if 0
 static int romdir_getattr(const char *path, struct stat *stbuf)
 {
+	romfile_t *file;
+
 	memset(stbuf, 0, sizeof(struct stat));
 
 	if (!strcmp(path, "/")) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
-	} else if (!strcmp(path, hello_path)) {
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		stbuf->st_size = strlen(hello_str);
 	} else {
-		return -ENOENT;
+		STAILQ_FOREACH(file, &g_queue, node) {
+			if (!strcmp(path, file->name)) {
+				stbuf->st_mode = S_IFREG | 0444;
+				stbuf->st_nlink = 1;
+				stbuf->st_size = file->size;
+				return 0;
+			}
+		}
 	}
 
-	return 0;
+	return -ENOENT;
 }
 
 static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	off_t offset, struct fuse_file_info *fi)
 {
+	romfile_t *file;
+
 	if (strcmp(path, "/")) {
 		return -ENOENT;
 	}
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
-	filler(buf, hello_path + 1, NULL, 0);
+
+	STAILQ_FOREACH(file, &g_queue, node) {
+		filler(buf, file->name, NULL, 0);
+	}
 
 	return 0;
 }
 
 static int romdir_open(const char *path, struct fuse_file_info *fi)
 {
-	if (strcmp(path, hello_path))
-		return -ENOENT;
+	romfile_t *file;
 
-	if ((fi->flags & 3) != O_RDONLY)
-		return -EACCES;
+	STAILQ_FOREACH(file, &g_queue, node) {
+		if (!strcmp(path, file->name)) {
+			if ((fi->flags & 3) != O_RDONLY)
+				return -EACCES;
+			else
+				return 0;
+		}
+	}
 
-	return 0;
+	return -ENOENT;
 }
 
 static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
 	size_t len;
+	romfile_t *file;
 
-	if (strcmp(path, hello_path))
-		return -ENOENT;
+	STAILQ_FOREACH(file, &g_queue, node) {
+		if (!strcmp(path, file->name)) {
+			if ((fi->flags & 3) != O_RDONLY)
+				return -EACCES;
+			else {
+				len = file->size;
+				if (offset < len){
+					if (offset + size > len)
+						size = len - offset;
+					memcpy(buf, file->data + offset, size);
+				} else {
+					size = 0;
+				}
 
-	len = strlen(hello_str);
-	if (offset < len){
-		if (offset + size > len)
-			size = len - offset;
-		memcpy(buf, hello_str + offset, size);
-	} else {
-		size = 0;
+				return size;
+			}
+		}
 	}
 
-	return size;
+	return -ENOENT;
 }
 
 static struct fuse_operations romdir_ops = {
@@ -207,13 +230,13 @@ static struct fuse_operations romdir_ops = {
 	.open = romdir_open,
 	.read = romdir_read
 };
+#endif
 
 int main(int argc, char *argv[])
 {
-#if 0
-	int fd;
-	romfile_queue_t queue;
+	int fd, ret;
 	romfile_t *file;
+	romfile_queue_t queue;
 
 	if (argc != 2)
 		return -1;
@@ -237,8 +260,7 @@ int main(int argc, char *argv[])
 	}
 
 	close(fd);
+
+//	ret = fuse_main(argc, argv, &romdir_ops, NULL);
 	return 0;
-#else
-	return fuse_main(argc, argv, &romdir_ops, NULL);
-#endif
 }
