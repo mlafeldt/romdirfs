@@ -11,6 +11,7 @@
 
 #define FUSE_USE_VERSION  26
 #include <fuse.h>
+#include <fuse_opt.h>
 
 /* Size of one ROMDIR entry */
 #define ROMENT_SIZE	16
@@ -27,6 +28,7 @@ typedef struct _romfile {
 	char		name[10];
 	u_int16_t	extinfo_size;
 	u_int32_t	size;
+
 	u_int32_t	offset;
 	u_int8_t	*data;
 
@@ -37,6 +39,23 @@ typedef struct _romfile {
 typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 
 static romfile_queue_t g_queue;
+
+/*
+ * String hashing function as specified by the ELF ABI.
+ */
+static u_int32_t strhash(const u_int8_t *name)
+{
+	u_int32_t h = 0, g;
+
+	while (*name) {
+		h = (h << 4) + *name++;
+		if ((g = (h & 0xf0000000)) != 0)
+			h ^= (g >> 24);
+		h &= ~g;
+	}
+
+	return h;
+}
 
 /*
  * Parse file for ROMDIR entries and add them to the queue.
@@ -137,7 +156,11 @@ static int romfile_extract(int fd, romfile_t *file)
 	close(fd_out);
 	return 0;
 }
-#if 0
+
+
+
+
+
 static int romdir_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
@@ -147,9 +170,10 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 	if (!strcmp(path, "/")) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
+		return 0;
 	} else {
 		STAILQ_FOREACH(file, &g_queue, node) {
-			if (!strcmp(path, file->name)) {
+			if (*path == '/' && !strcmp(path + 1, file->name)) {
 				stbuf->st_mode = S_IFREG | 0444;
 				stbuf->st_nlink = 1;
 				stbuf->st_size = file->size;
@@ -166,16 +190,14 @@ static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 {
 	romfile_t *file;
 
-	if (strcmp(path, "/")) {
+	if (strcmp(path, "/"))
 		return -ENOENT;
-	}
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
 
-	STAILQ_FOREACH(file, &g_queue, node) {
+	STAILQ_FOREACH(file, &g_queue, node)
 		filler(buf, file->name, NULL, 0);
-	}
 
 	return 0;
 }
@@ -185,7 +207,7 @@ static int romdir_open(const char *path, struct fuse_file_info *fi)
 	romfile_t *file;
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (!strcmp(path, file->name)) {
+		if (*path == '/' && !strcmp(path + 1, file->name)) {
 			if ((fi->flags & 3) != O_RDONLY)
 				return -EACCES;
 			else
@@ -199,25 +221,21 @@ static int romdir_open(const char *path, struct fuse_file_info *fi)
 static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
-	size_t len;
 	romfile_t *file;
+	size_t len;
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (!strcmp(path, file->name)) {
-			if ((fi->flags & 3) != O_RDONLY)
-				return -EACCES;
-			else {
-				len = file->size;
-				if (offset < len){
-					if (offset + size > len)
-						size = len - offset;
-					memcpy(buf, file->data + offset, size);
-				} else {
-					size = 0;
-				}
-
-				return size;
+		if (*path == '/' && !strcmp(path + 1, file->name)) {
+			len = file->size;
+			if (offset < len){
+				if (offset + size > len)
+					size = len - offset;
+				memcpy(buf, file->data + offset, size);
+			} else {
+				size = 0;
 			}
+
+			return size;
 		}
 	}
 
@@ -230,37 +248,42 @@ static struct fuse_operations romdir_ops = {
 	.open = romdir_open,
 	.read = romdir_read
 };
-#endif
 
 int main(int argc, char *argv[])
 {
 	int fd, ret;
 	romfile_t *file;
-	romfile_queue_t queue;
+//	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	if (argc != 2)
+	if (argc < 2)
 		return -1;
 
-	fd = open(argv[1], O_RDONLY);
+	fd = open("image.bin", O_RDONLY);
 	if (fd == -1) {
 		perror("open");
 		return -1;
 	}
 
-	if (__parse_file(fd, &queue) < 0) {
+	if (__parse_file(fd, &g_queue) < 0) {
+		perror("parse_file");
 		close(fd);
 		return -1;
 	}
 
-	STAILQ_FOREACH(file, &queue, node) {
+	STAILQ_FOREACH(file, &g_queue, node) {
 		romfile_show(file);
-		romfile_extract(fd, file);
-		STAILQ_REMOVE(&queue, file, _romfile, node);
+		romfile_read(fd, file);
+		//romfile_extract(fd, file);
+	}
+	close(fd);
+	ret = fuse_main(argc, argv, &romdir_ops, NULL);
+
+	/* clean up */
+	STAILQ_FOREACH(file, &g_queue, node) {
+		free(file->data);
+		STAILQ_REMOVE(&g_queue, file, _romfile, node);
 		free(file);
 	}
 
-	close(fd);
-
-//	ret = fuse_main(argc, argv, &romdir_ops, NULL);
-	return 0;
+	return ret;
 }
