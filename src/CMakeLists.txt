@@ -1,4 +1,4 @@
-SET(CMAKE_C_FLAGS "-Wall -pedantic -O2 -s")
+SET(CMAKE_C_FLAGS "-Wall -O2 -s")
 
 ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
 

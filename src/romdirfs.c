@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <error.h>
+
+#define FUSE_USE_VERSION  26
 #include <fuse.h>
 
 /* Size of one ROMDIR entry */
@@ -132,8 +134,38 @@ static int romfile_extract(int fd, romfile_t *file)
 	return 0;
 }
 
+static int romdir_getattr(const char *path, struct stat *stat)
+{
+	return 0;
+}
+
+static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+	off_t offset, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
+static int romdir_open(const char *path, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
+static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
+	struct fuse_file_info *fi)
+{
+	return 0;
+}
+
+static struct fuse_operations romdir_ops = {
+	.getattr = romdir_getattr,
+	.readdir = romdir_readdir,
+	.open = romdir_open,
+	.read = romdir_read
+};
+
 int main(int argc, char *argv[])
 {
+#if 1
 	int fd;
 	romfile_queue_t queue;
 	romfile_t *file;
@@ -161,4 +193,7 @@ int main(int argc, char *argv[])
 
 	close(fd);
 	return 0;
+#else
+	return fuse_main(argc, argv, &romdir_ops, NULL);
+#endif
 }
