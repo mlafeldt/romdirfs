@@ -6,25 +6,33 @@
 #include <string.h>
 #include <error.h>
 
+#define ROMENT_SIZE 16
+
 typedef struct _roment {
 	char		name[10];
 	u_int16_t	extinfo_size;
 	u_int32_t	size;
 } roment_t;
 
-#define ROMENT_SIZE 16
 
-void show_roment(const roment_t *roment)
+static void show_roment(const roment_t *roment, u_int32_t offset)
 {
-	printf("%-10s  0x%04x  0x%04x\n", roment->name,
-		roment->extinfo_size, roment->size);
+#if 0
+	printf("%-10s  %5i  %5i  %5i\n", roment->name,
+		roment->extinfo_size, roment->size, offset);
+#else
+	printf("%-10s %04x %08x %08x-%08x\n", roment->name,
+		roment->extinfo_size, roment->size, offset,
+		offset + roment->size);
+#endif
 }
 
-int read_romfile(const char *romfile)
+static int read_romfile(const char *romfile)
 {
 	int fd;
 	int reset_found = 0;
 	roment_t roment;
+	u_int32_t offset = 0;
 
 	fd = open(romfile, O_RDONLY);
 	if (fd == -1) {
@@ -45,11 +53,14 @@ int read_romfile(const char *romfile)
 		return -1;
 	}
 
-	show_roment(&roment);
+	do {
+		show_roment(&roment, offset);
 
-	while (read(fd, &roment, ROMENT_SIZE) == ROMENT_SIZE && roment.name[0]) {
-		show_roment(&roment);
-	}
+		if (!(roment.size % 0x10))
+			offset += roment.size;
+		else
+			offset += (roment.size + 0x10) & 0xfffffff0;
+	} while (read(fd, &roment, ROMENT_SIZE) == ROMENT_SIZE && roment.name[0]);
 
 	close(fd);
 	return 0;
