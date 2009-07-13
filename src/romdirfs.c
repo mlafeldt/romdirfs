@@ -24,6 +24,7 @@ typedef struct _romfile {
 	u_int16_t	extinfo_size;
 	u_int32_t	size;
 	u_int32_t	offset;
+	u_int8_t	*data;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
@@ -61,8 +62,11 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 	do {
 		/* add ROMDIR entry to queue */
 		file = (romfile_t*)malloc(sizeof(romfile_t));
-		memcpy(file, &entry, ROMENT_SIZE);
+		if (file == NULL)
+			return -1;
+		memcpy(file, &entry, ROMENT_SIZE); /* roment_t fits into romfile_t */
 		file->offset = offset;
+		file->data = NULL; /* we'll read the file data on demand */
 		STAILQ_INSERT_TAIL(queue, file, node);
 
 		/* offset must be aligned to 16 bytes */
@@ -75,34 +79,55 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 	return 0;
 }
 
-static void __show_romfile(const romfile_t *file)
+/*
+ * Show ROMDIR file information.
+ */
+static void romfile_show(const romfile_t *file)
 {
 	printf("%-10s %04x %08x %08x-%08x\n", file->name,
 		file->extinfo_size, file->size,
 		file->offset, file->offset + file->size);
 }
 
-static int __extract_romfile(int fd, const romfile_t *file)
+/*
+ * Read file data from ROMDIR fs.
+ */
+static int romfile_read(int fd, romfile_t *file)
 {
-	u_int8_t *buf = NULL;
+	/* read data only once */
+	if (file->data == NULL && file->size > 0) {
+		file->data = (u_int8_t*)malloc(file->size);
+		if (file->data == NULL)
+			return -1;
+		if (lseek(fd, file->offset, SEEK_SET) == -1)
+			return -1;
+		if (read(fd, file->data, file->size) != file->size)
+			return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * Extract file from ROMDIR fs.
+ */
+static int romfile_extract(int fd, romfile_t *file)
+{
 	int fd_out;
 
-	fd_out = open(file->name, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+	if (romfile_read(fd, file) < 0)
+		return -1;
+
+	fd_out = open(file->name, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd_out == -1) {
 		perror(file->name);
 		return -1;
 	}
 
-	buf = (u_int8_t*)malloc(file->size);
-	if (buf == NULL)
-		return -1;
+	if (file->size > 0)
+		write(fd_out, file->data, file->size);
 
-	lseek(fd, file->offset, SEEK_SET);
-	read(fd, buf, file->size);
-	write(fd_out, buf, file->size);
-	free(buf);
 	close(fd_out);
-
 	return 0;
 }
 
@@ -127,13 +152,12 @@ int main(int argc, char *argv[])
 	}
 
 	STAILQ_FOREACH(file, &queue, node) {
-		__show_romfile(file);
-		__extract_romfile(fd, file);
+		romfile_show(file);
+		romfile_extract(fd, file);
 		STAILQ_REMOVE(&queue, file, _romfile, node);
 		free(file);
 	}
 
 	close(fd);
-
 	return 0;
 }
