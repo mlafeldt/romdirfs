@@ -22,24 +22,19 @@ typedef struct _roment {
 	romhdr_t	header;
 	u_int32_t	offset;
 
-	TAILQ_ENTRY(_roment) node;
+	STAILQ_ENTRY(_roment) node;
 } roment_t;
 
-typedef TAILQ_HEAD(_roment_tbl, _roment) roment_tbl_t;
+typedef STAILQ_HEAD(_roment_queue, _roment) roment_queue_t;
 
-static void show_header(const romhdr_t *hdr, u_int32_t offset)
+static void show_entry(const roment_t *entry)
 {
-#if 0
-	printf("%-10s  %5i  %5i  %5i\n", hdr->name,
-		hdr->extinfo_size, hdr->size, offset);
-#else
-	printf("%-10s %04x %08x %08x-%08x\n", hdr->name,
-		hdr->extinfo_size, hdr->size, offset,
-		offset + hdr->size);
-#endif
+	printf("%-10s %04x %08x %08x-%08x\n", entry->header.name,
+		entry->header.extinfo_size, entry->header.size,
+		entry->offset, entry->offset + entry->header.size);
 }
 
-static int parse_headers(const char *romfile, roment_tbl_t *tbl)
+static int parse_romfile(const char *romfile, roment_queue_t *queue)
 {
 	int fd;
 	int reset_found = 0;
@@ -47,7 +42,7 @@ static int parse_headers(const char *romfile, roment_tbl_t *tbl)
 	roment_t *entry = NULL;
 	u_int32_t offset = 0;
 
-	TAILQ_INIT(tbl);
+	STAILQ_INIT(queue);
 
 	fd = open(romfile, O_RDONLY);
 	if (fd == -1) {
@@ -70,11 +65,13 @@ static int parse_headers(const char *romfile, roment_tbl_t *tbl)
 	}
 
 	do {
+		/* add rom entry to queue */
 		entry = (roment_t*)malloc(sizeof(roment_t));
 		memcpy(&entry->header, &header, ROM_HDR_SIZE);
 		entry->offset = offset;
-		TAILQ_INSERT_TAIL(tbl, entry, node);
+		STAILQ_INSERT_TAIL(queue, entry, node);
 
+		/* offset must be aligned to 16 bytes */
 		if (!(header.size % 0x10))
 			offset += header.size;
 		else
@@ -87,15 +84,15 @@ static int parse_headers(const char *romfile, roment_tbl_t *tbl)
 
 int main(int argc, char *argv[])
 {
-	roment_tbl_t tbl;
+	roment_queue_t queue;
 	roment_t *entry;
 
 	if (argc > 1) {
-		parse_headers(argv[1], &tbl);
+		parse_romfile(argv[1], &queue);
 
-		TAILQ_FOREACH(entry, &tbl, node) {
-			show_header(&entry->header, entry->offset);
-			TAILQ_REMOVE(&tbl, entry, node);
+		STAILQ_FOREACH(entry, &queue, node) {
+			show_entry(entry);
+			STAILQ_REMOVE(&queue, entry, _roment, node);
 			free(entry);
 		}
 	}
