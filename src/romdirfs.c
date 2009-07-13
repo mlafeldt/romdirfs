@@ -175,9 +175,13 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 2;
 		return 0;
 	} else {
+		if (*path != '/')
+			return -ENOENT;
+
 		hash = strhash((u_int8_t*)path + 1);
+
 		STAILQ_FOREACH(file, &g_queue, node) {
-			if (*path == '/' && hash == file->hash) {
+			if (hash == file->hash) {
 				stbuf->st_mode = S_IFREG | 0444;
 				stbuf->st_nlink = 1;
 				stbuf->st_size = file->size;
@@ -209,10 +213,15 @@ static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int romdir_open(const char *path, struct fuse_file_info *fi)
 {
 	romfile_t *file;
-	u_int32_t hash = strhash((u_int8_t*)path + 1);
+	u_int32_t hash;
+
+	if (*path != '/')
+		return -ENOENT;
+
+	hash = strhash((u_int8_t*)path + 1);
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (*path == '/' && hash == file->hash) {
+		if (hash == file->hash) {
 			if ((fi->flags & 3) != O_RDONLY)
 				return -EACCES;
 			else
@@ -227,11 +236,16 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
 	romfile_t *file;
+	u_int32_t hash;
 	size_t len;
-	u_int32_t hash = strhash((u_int8_t*)path + 1);
+
+	if (*path != '/')
+		return -ENOENT;
+
+	hash = strhash((u_int8_t*)path + 1);
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (*path == '/' && hash == file->hash) {
+		if (hash == file->hash) {
 			len = file->size;
 			if (offset < len){
 				if (offset + size > len)
