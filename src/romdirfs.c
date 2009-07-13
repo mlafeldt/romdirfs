@@ -31,6 +31,7 @@ typedef struct _romfile {
 
 	u_int32_t	offset;
 	u_int8_t	*data;
+	u_int32_t	hash;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
@@ -91,6 +92,7 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 		memcpy(file, &entry, ROMENT_SIZE); /* roment_t fits into romfile_t */
 		file->offset = offset;
 		file->data = NULL; /* we'll read the file data on demand */
+		file->hash = strhash((u_int8_t*)file->name);
 		STAILQ_INSERT_TAIL(queue, file, node);
 
 		/* offset must be aligned to 16 bytes */
@@ -108,9 +110,9 @@ static int __parse_file(int fd, romfile_queue_t *queue)
  */
 static void romfile_show(const romfile_t *file)
 {
-	printf("%-10s %04x %08x %08x-%08x\n", file->name,
-		file->extinfo_size, file->size,
-		file->offset, file->offset + file->size);
+	printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
+		file->extinfo_size, file->size, file->offset,
+		file->offset + file->size);
 }
 
 /*
@@ -164,6 +166,7 @@ static int romfile_extract(int fd, romfile_t *file)
 static int romdir_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
+	u_int32_t hash;
 
 	memset(stbuf, 0, sizeof(struct stat));
 
@@ -172,8 +175,9 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 2;
 		return 0;
 	} else {
+		hash = strhash((u_int8_t*)path + 1);
 		STAILQ_FOREACH(file, &g_queue, node) {
-			if (*path == '/' && !strcmp(path + 1, file->name)) {
+			if (*path == '/' && hash == file->hash) {
 				stbuf->st_mode = S_IFREG | 0444;
 				stbuf->st_nlink = 1;
 				stbuf->st_size = file->size;
@@ -205,9 +209,10 @@ static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int romdir_open(const char *path, struct fuse_file_info *fi)
 {
 	romfile_t *file;
+	u_int32_t hash = strhash((u_int8_t*)path + 1);
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (*path == '/' && !strcmp(path + 1, file->name)) {
+		if (*path == '/' && hash == file->hash) {
 			if ((fi->flags & 3) != O_RDONLY)
 				return -EACCES;
 			else
@@ -223,9 +228,10 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 {
 	romfile_t *file;
 	size_t len;
+	u_int32_t hash = strhash((u_int8_t*)path + 1);
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		if (*path == '/' && !strcmp(path + 1, file->name)) {
+		if (*path == '/' && hash == file->hash) {
 			len = file->size;
 			if (offset < len){
 				if (offset + size > len)
