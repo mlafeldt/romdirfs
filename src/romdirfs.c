@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <error.h>
+#include <errno.h>
 
 #define FUSE_USE_VERSION  26
 #include <fuse.h>
@@ -134,26 +135,70 @@ static int romfile_extract(int fd, romfile_t *file)
 	return 0;
 }
 
-static int romdir_getattr(const char *path, struct stat *stat)
+static const char *hello_str = "Hello World!\n";
+static const char *hello_path = "/hello";
+
+static int romdir_getattr(const char *path, struct stat *stbuf)
 {
+	memset(stbuf, 0, sizeof(struct stat));
+
+	if (!strcmp(path, "/")) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+	} else if (!strcmp(path, hello_path)) {
+		stbuf->st_mode = S_IFREG | 0444;
+		stbuf->st_nlink = 1;
+		stbuf->st_size = strlen(hello_str);
+	} else {
+		return -ENOENT;
+	}
+
 	return 0;
 }
 
 static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	off_t offset, struct fuse_file_info *fi)
 {
+	if (strcmp(path, "/")) {
+		return -ENOENT;
+	}
+
+	filler(buf, ".", NULL, 0);
+	filler(buf, "..", NULL, 0);
+	filler(buf, hello_path + 1, NULL, 0);
+
 	return 0;
 }
 
 static int romdir_open(const char *path, struct fuse_file_info *fi)
 {
+	if (strcmp(path, hello_path))
+		return -ENOENT;
+
+	if ((fi->flags & 3) != O_RDONLY)
+		return -EACCES;
+
 	return 0;
 }
 
 static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
-	return 0;
+	size_t len;
+
+	if (strcmp(path, hello_path))
+		return -ENOENT;
+
+	len = strlen(hello_str);
+	if (offset < len){
+		if (offset + size > len)
+			size = len - offset;
+		memcpy(buf, hello_str + offset, size);
+	} else {
+		size = 0;
+	}
+
+	return size;
 }
 
 static struct fuse_operations romdir_ops = {
@@ -165,7 +210,7 @@ static struct fuse_operations romdir_ops = {
 
 int main(int argc, char *argv[])
 {
-#if 1
+#if 0
 	int fd;
 	romfile_queue_t queue;
 	romfile_t *file;
