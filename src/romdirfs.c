@@ -32,14 +32,9 @@ typedef struct _romfile {
 typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 
 
-static void __show_romfile(const romfile_t *file)
-{
-	printf("%-10s %04x %08x %08x-%08x\n", file->name,
-		file->extinfo_size, file->size,
-		file->offset, file->offset + file->size);
-}
-
-/* Parse file for ROMDIR entries. */
+/*
+ * Parse file for ROMDIR entries and add them to the queue.
+ */
 static int __parse_file(int fd, romfile_queue_t *queue)
 {
 	roment_t entry;
@@ -80,6 +75,37 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 	return 0;
 }
 
+static void __show_romfile(const romfile_t *file)
+{
+	printf("%-10s %04x %08x %08x-%08x\n", file->name,
+		file->extinfo_size, file->size,
+		file->offset, file->offset + file->size);
+}
+
+static int __extract_romfile(int fd, const romfile_t *file)
+{
+	u_int8_t *buf = NULL;
+	int fd_out;
+
+	fd_out = open(file->name, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+	if (fd_out == -1) {
+		perror(file->name);
+		return -1;
+	}
+
+	buf = (u_int8_t*)malloc(file->size);
+	if (buf == NULL)
+		return -1;
+
+	lseek(fd, file->offset, SEEK_SET);
+	read(fd, buf, file->size);
+	write(fd_out, buf, file->size);
+	free(buf);
+	close(fd_out);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int fd;
@@ -95,10 +121,14 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	__parse_file(fd, &queue);
+	if (__parse_file(fd, &queue) < 0) {
+		close(fd);
+		return -1;
+	}
 
 	STAILQ_FOREACH(file, &queue, node) {
 		__show_romfile(file);
+		__extract_romfile(fd, file);
 		STAILQ_REMOVE(&queue, file, _romfile, node);
 		free(file);
 	}
