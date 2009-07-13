@@ -8,10 +8,10 @@
 #include <string.h>
 #include <error.h>
 
-/* Size of one entry in ROMDIR header table */
+/* Size of one ROMDIR entry */
 #define ROM_HDR_SIZE 16
 
-/* One entry in ROMDIR header table */
+/* Structure of a ROMDIR entry */
 typedef struct _romhdr {
 	char		name[10];
 	u_int16_t	extinfo_size;
@@ -21,22 +21,23 @@ typedef struct _romhdr {
 typedef struct _roment {
 	romhdr_t	header;
 	u_int32_t	offset;
+	u_int8_t	*data;
 
 	STAILQ_ENTRY(_roment) node;
 } roment_t;
 
 typedef STAILQ_HEAD(_roment_queue, _roment) roment_queue_t;
 
-static void show_entry(const roment_t *entry)
+static void __show_entry(const roment_t *entry)
 {
 	printf("%-10s %04x %08x %08x-%08x\n", entry->header.name,
 		entry->header.extinfo_size, entry->header.size,
 		entry->offset, entry->offset + entry->header.size);
 }
 
-static int parse_romfile(const char *romfile, roment_queue_t *queue)
+/* Parse file for rom entries. */
+static int __parse_romfile(int fd, roment_queue_t *queue)
 {
-	int fd;
 	int reset_found = 0;
 	romhdr_t header;
 	roment_t *entry = NULL;
@@ -44,13 +45,8 @@ static int parse_romfile(const char *romfile, roment_queue_t *queue)
 
 	STAILQ_INIT(queue);
 
-	fd = open(romfile, O_RDONLY);
-	if (fd == -1) {
-		perror(__FUNCTION__);
-		return -1;
-	}
-
 	/* find RESET module */
+	lseek(fd, 0, SEEK_SET);
 	while (read(fd, &header, ROM_HDR_SIZE) == ROM_HDR_SIZE) {
 		if (!strcmp(header.name, "RESET")) {
 			reset_found = 1;
@@ -59,8 +55,7 @@ static int parse_romfile(const char *romfile, roment_queue_t *queue)
 	}
 
 	if (!reset_found) {
-		printf("RESET not found\n");
-		close(fd);
+		printf("RESET module not found\n");
 		return -1;
 	}
 
@@ -78,24 +73,33 @@ static int parse_romfile(const char *romfile, roment_queue_t *queue)
 			offset += (header.size + 0x10) & 0xfffffff0;
 	} while (read(fd, &header, ROM_HDR_SIZE) == ROM_HDR_SIZE && header.name[0]);
 
-	close(fd);
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
+	int fd;
 	roment_queue_t queue;
 	roment_t *entry;
 
-	if (argc > 1) {
-		parse_romfile(argv[1], &queue);
+	if (argc != 2)
+		return -1;
 
-		STAILQ_FOREACH(entry, &queue, node) {
-			show_entry(entry);
-			STAILQ_REMOVE(&queue, entry, _roment, node);
-			free(entry);
-		}
+	fd = open(argv[1], O_RDONLY);
+	if (fd == -1) {
+		perror("open");
+		return -1;
 	}
+
+	__parse_romfile(fd, &queue);
+
+	STAILQ_FOREACH(entry, &queue, node) {
+		__show_entry(entry);
+		STAILQ_REMOVE(&queue, entry, _roment, node);
+		free(entry);
+	}
+
+	close(fd);
 
 	return 0;
 }
