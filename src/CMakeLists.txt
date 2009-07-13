@@ -1,7 +1,10 @@
 SET(CMAKE_C_FLAGS "-Wall -pedantic -O2 -s")
 
+ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
+
 SET(SRCS romdirfs.c)
 
 ADD_EXECUTABLE(romdirfs ${SRCS})
+TARGET_LINK_LIBRARIES(romdirfs fuse)
 
 INSTALL(TARGETS romdirfs DESTINATION bin)

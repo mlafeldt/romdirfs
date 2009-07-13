@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <error.h>
+#include <fuse.h>
 
 /* Size of one ROMDIR entry */
 #define ROMENT_SIZE	16
@@ -80,7 +81,7 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 }
 
 /*
- * Show ROMDIR file information.
+ * Show information about a ROMDIR file.
  */
 static void romfile_show(const romfile_t *file)
 {
@@ -124,7 +125,7 @@ static int romfile_extract(int fd, romfile_t *file)
 		return -1;
 	}
 
-	if (file->size > 0)
+	if (file->data != NULL)
 		write(fd_out, file->data, file->size);
 
 	close(fd_out);

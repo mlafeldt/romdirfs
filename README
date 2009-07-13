@@ -1,0 +1,2 @@
+
+sudo aptitude install libfuse-dev
