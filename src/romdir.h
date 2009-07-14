@@ -1,8 +1,8 @@
 #ifndef _ROMDIR_H_
 #define _ROMDIR_H_
 
-#include <sys/types.h>
 #include <sys/queue.h>
+#include <sys/types.h>
 
 /* Size of one ROMDIR entry */
 #define ROMENT_SIZE	16

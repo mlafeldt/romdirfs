@@ -1,16 +1,16 @@
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/queue.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <error.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
+#include <error.h>
+#include <fcntl.h>
 #define FUSE_USE_VERSION  26
 #include <fuse.h>
 #include <fuse_opt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "romdir.h"
 
 static romfile_queue_t g_queue = STAILQ_HEAD_INITIALIZER(g_queue);
