@@ -6,7 +6,7 @@ ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
 
 INCLUDE_DIRECTORIES(/usr/include/fuse)
 
-ADD_EXECUTABLE(romdirfs romdirfs.c)
+ADD_EXECUTABLE(romdirfs romdir.c romdirfs.c)
 
 TARGET_LINK_LIBRARIES(romdirfs pthread fuse rt dl)
 
