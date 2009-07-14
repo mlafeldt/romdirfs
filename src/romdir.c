@@ -1,5 +1,5 @@
 /*
- * romdir.c - ROMDIR
+ * romdir.c - read files from ROMDIR filesystem
  *
  * Copyright (C) 2009 misfire <misfire@xploderfreax.de>
  *
@@ -73,9 +73,14 @@ int romdir_read(int fd, romfile_queue_t *queue)
 
 	/* read ROMDIR entries and add them to the queue */
 	do {
+		/* those entries contain nothing but zeros - ignore them */
+		if (entry.name[0] == '-')
+			continue;
+
 		file = (romfile_t*)malloc(sizeof(romfile_t));
 		if (file == NULL)
 			return -1;
+
 		strcpy(file->name, entry.name);
 		file->size = entry.size;
 		file->extinfo_size = entry.extinfo_size;
@@ -93,16 +98,16 @@ int romdir_read(int fd, romfile_queue_t *queue)
 
 	/* read data for each file */
 	STAILQ_FOREACH(file, queue, node) {
-		if (file->size > 0) {
-			if (lseek(fd, file->offset, SEEK_SET) == -1)
-				return -1;
-			if ((file->data = (u_int8_t*)malloc(file->size)) == NULL)
-				return -1;
-			if (read(fd, file->data, file->size) != file->size) {
-				free(file->data);
-				file->data = NULL;
-				return -1;
-			}
+		if (!file->size)
+			continue;
+		if (lseek(fd, file->offset, SEEK_SET) == -1)
+			return -1;
+		if ((file->data = (u_int8_t*)malloc(file->size)) == NULL)
+			return -1;
+		if (read(fd, file->data, file->size) != file->size) {
+			free(file->data);
+			file->data = NULL;
+			return -1;
 		}
 	}
 
@@ -137,9 +142,9 @@ int romdir_extract(int fd, const romfile_t *file, const char *path)
 }
 
 /*
- * Search queue for file with a specific hash.
+ * Search queue for file by hash.
  */
-romfile_t *romdir_find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash)
+romfile_t *romdir_find_file(const romfile_queue_t *queue, u_int32_t hash)
 {
 	romfile_t *file = NULL;
 

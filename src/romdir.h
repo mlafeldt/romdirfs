@@ -1,5 +1,5 @@
 /*
- * romdir.h - ROMDIR
+ * romdir.h - read files from ROMDIR filesystem
  *
  * Copyright (C) 2009 misfire <misfire@xploderfreax.de>
  *
@@ -34,8 +34,8 @@
  * @extinfo_size: ?
  * @size: entry size
  *
- * This data structure represents one entry in the ROMDIR entry table.
- * The start of this table can be found by searching for the name "RESET".
+ * This data structure represents one entry in the ROMDIR entry table.  The
+ * start of this table can be found by searching for the name "RESET".
  */
 typedef struct _roment {
 	char		name[10];
@@ -71,6 +71,6 @@ typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 u_int32_t strhash(const char *name);
 int romdir_read(int fd, romfile_queue_t *queue);
 int romdir_extract(int fd, const romfile_t *file, const char *path);
-romfile_t *romdir_find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash);
+romfile_t *romdir_find_file(const romfile_queue_t *queue, u_int32_t hash);
 
 #endif /* _ROMDIR_H_ */

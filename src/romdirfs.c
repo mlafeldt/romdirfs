@@ -68,7 +68,7 @@ static int romdirfs_getattr(const char *path, struct stat *stbuf)
 		return 0;
 	} else {
 		hash = strhash(path + 1);
-		file = romdir_find_file_by_hash(&g_queue, hash);
+		file = romdir_find_file(&g_queue, hash);
 		if (file != NULL) {
 			stbuf->st_mode = S_IFREG | 0444;
 			stbuf->st_nlink = 1;
@@ -106,7 +106,7 @@ static int romdirfs_open(const char *path, struct fuse_file_info *fi)
 		return -ENOENT;
 
 	hash = strhash(path + 1);
-	file = romdir_find_file_by_hash(&g_queue, hash);
+	file = romdir_find_file(&g_queue, hash);
 	if (file != NULL) {
 		if ((fi->flags & 3) != O_RDONLY)
 			return -EACCES;
@@ -128,7 +128,7 @@ static int romdirfs_read(const char *path, char *buf, size_t size, off_t offset,
 		return -ENOENT;
 
 	hash = strhash(path + 1);
-	file = romdir_find_file_by_hash(&g_queue, hash);
+	file = romdir_find_file(&g_queue, hash);
 	if (file != NULL) {
 		len = file->size;
 		if (offset < len){
