@@ -90,16 +90,6 @@ int romdir_read(int fd, romfile_queue_t *queue)
 }
 
 /*
- * Show information about a ROMDIR file.
- */
-void romdir_show(const romfile_t *file)
-{
-	printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
-		file->extinfo_size, file->size, file->offset,
-		file->offset + file->size);
-}
-
-/*
  * Extract file from ROMDIR fs.
  */
 int romdir_extract(int fd, romfile_t *file)

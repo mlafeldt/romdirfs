@@ -167,7 +167,9 @@ int main(int argc, char *argv[])
 	}
 
 	STAILQ_FOREACH(file, &g_queue, node) {
-		romdir_show(file);
+		printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
+			file->extinfo_size, file->size, file->offset,
+			file->offset + file->size);
 		romdir_extract(fd, file);
 	}
 	close(fd);
