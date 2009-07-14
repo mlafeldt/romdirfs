@@ -160,8 +160,17 @@ static int romfile_extract(int fd, romfile_t *file)
 }
 
 
+static romfile_t *find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash)
+{
+	romfile_t *file = NULL;
 
+	STAILQ_FOREACH(file, &g_queue, node) {
+		if (hash == file->hash)
+			break;
+	}
 
+	return file;
+}
 
 static int romdir_getattr(const char *path, struct stat *stbuf)
 {
@@ -170,23 +179,20 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 
 	memset(stbuf, 0, sizeof(struct stat));
 
-	if (!strcmp(path, "/")) {
+	if (*path != '/')
+		return -ENOENT;
+	if (path[1] == '\0') { /* root dir */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		return 0;
 	} else {
-		if (*path != '/')
-			return -ENOENT;
-
 		hash = strhash((u_int8_t*)path + 1);
-
-		STAILQ_FOREACH(file, &g_queue, node) {
-			if (hash == file->hash) {
-				stbuf->st_mode = S_IFREG | 0444;
-				stbuf->st_nlink = 1;
-				stbuf->st_size = file->size;
-				return 0;
-			}
+		file = find_file_by_hash(&g_queue, hash);
+		if (file != NULL) {
+			stbuf->st_mode = S_IFREG | 0444;
+			stbuf->st_nlink = 1;
+			stbuf->st_size = file->size;
+			return 0;
 		}
 	}
 
@@ -219,14 +225,12 @@ static int romdir_open(const char *path, struct fuse_file_info *fi)
 		return -ENOENT;
 
 	hash = strhash((u_int8_t*)path + 1);
-
-	STAILQ_FOREACH(file, &g_queue, node) {
-		if (hash == file->hash) {
-			if ((fi->flags & 3) != O_RDONLY)
-				return -EACCES;
-			else
-				return 0;
-		}
+	file = find_file_by_hash(&g_queue, hash);
+	if (file != NULL) {
+		if ((fi->flags & 3) != O_RDONLY)
+			return -EACCES;
+		else
+			return 0;
 	}
 
 	return -ENOENT;
@@ -243,20 +247,17 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 		return -ENOENT;
 
 	hash = strhash((u_int8_t*)path + 1);
-
-	STAILQ_FOREACH(file, &g_queue, node) {
-		if (hash == file->hash) {
-			len = file->size;
-			if (offset < len){
-				if (offset + size > len)
-					size = len - offset;
-				memcpy(buf, file->data + offset, size);
-			} else {
-				size = 0;
-			}
-
-			return size;
+	file = find_file_by_hash(&g_queue, hash);
+	if (file != NULL) {
+		len = file->size;
+		if (offset < len){
+			if (offset + size > len)
+				size = len - offset;
+			memcpy(buf, file->data + offset, size);
+		} else {
+			size = 0;
 		}
+		return size;
 	}
 
 	return -ENOENT;
