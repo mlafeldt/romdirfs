@@ -179,6 +179,14 @@ static void *romdir_init(struct fuse_conn_info *conn)
 
 static void romdir_destroy(void *data)
 {
+	romfile_t *file;
+
+	/* clean up */
+	STAILQ_FOREACH(file, &g_queue, node) {
+		free(file->data);
+		STAILQ_REMOVE(&g_queue, file, _romfile, node);
+		free(file);
+	}
 }
 
 static int romdir_getattr(const char *path, struct stat *stbuf)
@@ -309,13 +317,6 @@ int main(int argc, char *argv[])
 	}
 	close(fd);
 	ret = fuse_main(argc, argv, &romdir_ops, NULL);
-
-	/* clean up */
-	STAILQ_FOREACH(file, &g_queue, node) {
-		free(file->data);
-		STAILQ_REMOVE(&g_queue, file, _romfile, node);
-		free(file);
-	}
 
 	return ret;
 }
