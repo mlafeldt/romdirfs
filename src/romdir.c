@@ -1,3 +1,24 @@
+/*
+ * romdir.c - ROMDIR
+ *
+ * Copyright (C) 2009 misfire <misfire@xploderfreax.de>
+ *
+ * This file is part of romdirfs.
+ *
+ * romdirfs is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * romdirfs is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with romdirfs.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <sys/queue.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,8 +58,9 @@ int romdir_read(int fd, romfile_queue_t *queue)
 	u_int32_t offset = 0;
 	int reset_found = 0;
 
-	/* find RESET file */
-	lseek(fd, 0, SEEK_SET);
+	/* find ROMDIR entry named "RESET" */
+	if (lseek(fd, 0, SEEK_SET) == -1)
+		return -1;
 	while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE) {
 		if (!strcmp(entry.name, "RESET")) {
 			reset_found = 1;
@@ -49,9 +71,8 @@ int romdir_read(int fd, romfile_queue_t *queue)
 	if (!reset_found)
 		return -1;
 
-	/* read ROMDIR entries */
+	/* read ROMDIR entries and add them to the queue */
 	do {
-		/* add file to queue */
 		file = (romfile_t*)malloc(sizeof(romfile_t));
 		if (file == NULL)
 			return -1;
@@ -168,7 +189,8 @@ int main(int argc, char *argv[])
 			file->offset + file->size, file->size, file->extinfo_size);
 
 		if (romdir_extract(fd, file, path) < 0)
-			fprintf(stderr, "Error: could not extract file %s\n", file->name);
+			fprintf(stderr, "Error: could not extract file %s\n",
+				file->name);
 
 		free(file->data);
 		STAILQ_REMOVE(&queue, file, _romfile, node);
