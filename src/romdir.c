@@ -115,12 +115,12 @@ int romdir_read(int fd, romfile_queue_t *queue)
 }
 
 /*
- * Extract file from ROMDIR fs.
+ * Extract file from ROMDIR fs to path.
  */
-int romdir_extract(int fd, const romfile_t *file, const char *path)
+int romdir_extract(const romfile_t *file, const char *path)
 {
-	int fd_out;
 	char fullpath[1024] = { 0 };
+	int fd;
 
 	if (path != NULL) {
 		strcpy(fullpath, path);
@@ -129,14 +129,14 @@ int romdir_extract(int fd, const romfile_t *file, const char *path)
 
 	strcat(fullpath, file->name);
 
-	fd_out = open(fullpath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-	if (fd_out == -1)
+	fd = open(fullpath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	if (fd == -1)
 		return -1;
 
 	if (file->data != NULL)
-		write(fd_out, file->data, file->size);
+		write(fd, file->data, file->size);
 
-	close(fd_out);
+	close(fd);
 
 	return 0;
 }
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 		printf("%-10s %08x-%08x %8i %4i\n", file->name, file->offset,
 			file->offset + file->size, file->size, file->extinfo_size);
 
-		if (romdir_extract(fd, file, path) < 0)
+		if (romdir_extract(file, path) < 0)
 			fprintf(stderr, "Error: could not extract file %s\n",
 				file->name);
 

@@ -191,7 +191,6 @@ int main(int argc, char *argv[])
 		printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
 			file->extinfo_size, file->size, file->offset,
 			file->offset + file->size);
-		romdir_extract(fd, file, "/tmp/test/");
 	}
 	close(fd);
 	ret = fuse_main(argc, argv, &romdirfs_ops, NULL);
