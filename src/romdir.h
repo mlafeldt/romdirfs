@@ -12,6 +12,9 @@
  * @name: entry name
  * @extinfo_size: ?
  * @size: entry size
+ *
+ * This data structure represents one entry in the ROMDIR entry table.
+ * The start of this table can be found by searching for the name "RESET".
  */
 typedef struct _roment {
 	char		name[10];
@@ -27,6 +30,8 @@ typedef struct _roment {
  * @offset: file offset of data
  * @data: buffer holding file data, or NULL if size is 0
  * @hash: file name hash for fast searching
+ *
+ * This structure is used to hold the data and metadata of a ROMDIR file.
  */
 typedef struct _romfile {
 	char		name[10];

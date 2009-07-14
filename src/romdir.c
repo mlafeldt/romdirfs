@@ -7,8 +7,10 @@
 #include <unistd.h>
 #include "romdir.h"
 
-/*
- * String hashing function as specified by the ELF ABI.
+/**
+ * strhash - String hashing function as specified by the ELF ABI.
+ * @name: string to calculate hash from
+ * @return: 32-bit hash value
  */
 u_int32_t strhash(const char *name)
 {
