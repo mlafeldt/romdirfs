@@ -129,41 +129,47 @@ romfile_t *romdir_find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash
 #ifdef _ROMDIR_STANDALONE
 #include <stdio.h>
 
-static romfile_queue_t g_queue = STAILQ_HEAD_INITIALIZER(g_queue);
-
 int main(int argc, char *argv[])
 {
-	int fd;
-	romfile_t *file;
+	int fd, ret;
 	const char *path = NULL;
+	romfile_t *file = NULL;
+	romfile_queue_t queue = STAILQ_HEAD_INITIALIZER(queue);
 
-	if (argc < 3)
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s <rom file> [output path]\n", argv[0]);
 		return -1;
+	}
 
 	fd = open(argv[1], O_RDONLY);
 	if (fd == -1) {
-		perror("open");
+		fprintf(stderr, "Error: could not open rom file\n");
 		return -1;
 	}
 
-	path = argv[2];
-
-//	STAILQ_INIT(&g_queue);
-
-	if (romdir_read(fd, &g_queue) < 0) {
-		perror("romdir_read");
-		close(fd);
-		return -1;
-	}
-
-	STAILQ_FOREACH(file, &g_queue, node) {
-		printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
-			file->extinfo_size, file->size, file->offset,
-			file->offset + file->size);
-		romdir_extract(fd, file, path);
-	}
-
+	ret = romdir_read(fd, &queue);
 	close(fd);
+	if (ret < 0) {
+		fprintf(stderr, "Error: could not read from rom file\n");
+		return -1;
+	}
+
+	if (argc > 2)
+		path = argv[2];
+
+	printf("%-10s %-17s %8s %4s\n", "filename", "offset", "size", "ext");
+
+	STAILQ_FOREACH(file, &queue, node) {
+		printf("%-10s %08x-%08x %8i %4i\n", file->name, file->offset,
+			file->offset + file->size, file->size, file->extinfo_size);
+
+		if (romdir_extract(fd, file, path) < 0)
+			fprintf(stderr, "Error: could not extract file %s\n", file->name);
+
+		free(file->data);
+		STAILQ_REMOVE(&queue, file, _romfile, node);
+		free(file);
+	}
 
 	return 0;
 }
