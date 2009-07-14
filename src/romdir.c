@@ -48,6 +48,8 @@ u_int32_t strhash(const char *name)
 	return h;
 }
 
+#define ALIGN(x, a)	(((x) + (a) - 1) & ~((a) - 1))
+
 /*
  * Parse file for ROMDIR entries and add them to the queue.
  */
@@ -90,10 +92,8 @@ int romdir_read(int fd, romfile_queue_t *queue)
 		STAILQ_INSERT_TAIL(queue, file, node);
 
 		/* offset must be aligned to 16 bytes */
-		if (!(entry.size % 0x10))
-			offset += entry.size;
-		else
-			offset += (entry.size + 0x10) & 0xfffffff0;
+		offset += ALIGN(entry.size, 0x10);
+
 	} while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE && entry.name[0]);
 
 	/* read data for each file */
