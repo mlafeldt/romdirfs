@@ -47,10 +47,8 @@ int romdir_read(int fd, romfile_queue_t *queue)
 		}
 	}
 
-	if (!reset_found) {
-		fprintf(stderr, "Error: RESET file not found\n");
+	if (!reset_found)
 		return -1;
-	}
 
 	/* read ROMDIR entries */
 	do {
@@ -92,19 +90,27 @@ int romdir_read(int fd, romfile_queue_t *queue)
 /*
  * Extract file from ROMDIR fs.
  */
-int romdir_extract(int fd, romfile_t *file)
+int romdir_extract(int fd, const romfile_t *file, const char *path)
 {
-	int fd_out = open(file->name, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	int fd_out;
+	char fullpath[1024] = { 0 };
 
-	if (fd_out == -1) {
-		perror(file->name);
-		return -1;
+	if (path != NULL) {
+		strcpy(fullpath, path);
+		strcat(fullpath, "/");
 	}
+
+	strcat(fullpath, file->name);
+
+	fd_out = open(fullpath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	if (fd_out == -1)
+		return -1;
 
 	if (file->data != NULL)
 		write(fd_out, file->data, file->size);
 
 	close(fd_out);
+
 	return 0;
 }
 

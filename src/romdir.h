@@ -32,7 +32,7 @@ typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 
 u_int32_t strhash(const char *name);
 int romdir_read(int fd, romfile_queue_t *queue);
-int romdir_extract(int fd, romfile_t *file);
+int romdir_extract(int fd, const romfile_t *file, const char *path);
 romfile_t *romdir_find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash);
 
 #endif /* _ROMDIR_H_ */
