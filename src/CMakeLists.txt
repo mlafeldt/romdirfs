@@ -1,13 +1,11 @@
-# TODO get info from: pkg-config fuse --cflags --libs
+INCLUDE(${CMAKE_ROOT}/Modules/FindPkgConfig.cmake)
+PKG_CHECK_MODULES(FUSE, fuse>=2.6.0)
 
-SET(CMAKE_C_FLAGS "-Wall -O2 -s")
-
-ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
-
-INCLUDE_DIRECTORIES(/usr/include/fuse)
+SET(CMAKE_C_FLAGS "-Wall -O2 -s ${FUSE_CFLAGS_OTHER}")
+INCLUDE_DIRECTORIES("${FUSE_INCLUDE_DIRS}")
 
 ADD_EXECUTABLE(romdirfs romdir.c romdirfs.c)
-TARGET_LINK_LIBRARIES(romdirfs pthread fuse rt dl)
+TARGET_LINK_LIBRARIES(romdirfs ${FUSE_LIBRARIES})
 INSTALL(TARGETS romdirfs DESTINATION bin)
 
 ADD_EXECUTABLE(romdir romdir.c)
