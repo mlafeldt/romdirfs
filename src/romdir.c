@@ -53,7 +53,9 @@ int romdir_read(int fd, romfile_queue_t *queue)
 		file = (romfile_t*)malloc(sizeof(romfile_t));
 		if (file == NULL)
 			return -1;
-		memcpy(file, &entry, ROMENT_SIZE); /* roment_t fits into romfile_t */
+		strcpy(file->name, entry.name);
+		file->size = entry.size;
+		file->extinfo_size = entry.extinfo_size;
 		file->offset = offset;
 		file->data = NULL; /* will be read later */
 		file->hash = strhash(file->name);

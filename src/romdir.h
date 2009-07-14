@@ -7,19 +7,31 @@
 /* Size of one ROMDIR entry */
 #define ROMENT_SIZE	16
 
-/* ROMDIR entry */
+/**
+ * roment_t - ROMDIR entry
+ * @name: entry name
+ * @extinfo_size: ?
+ * @size: entry size
+ */
 typedef struct _roment {
 	char		name[10];
 	u_int16_t	extinfo_size;
 	u_int32_t	size;
 } roment_t;
 
-/* ROMDIR file information */
+/**
+ * romfile_t - ROMDIR file information
+ * @name: file name
+ * @size: file size
+ * @extinfo_size: ?
+ * @offset: file offset of data
+ * @data: buffer holding file data, or NULL if size is 0
+ * @hash: file name hash for fast searching
+ */
 typedef struct _romfile {
 	char		name[10];
-	u_int16_t	extinfo_size;
 	u_int32_t	size;
-
+	u_int16_t	extinfo_size;
 	u_int32_t	offset;
 	u_int8_t	*data;
 	u_int32_t	hash;
