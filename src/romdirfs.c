@@ -39,17 +39,19 @@ typedef struct _romfile {
 /* Queue to hold multiple ROMDIR files */
 typedef STAILQ_HEAD(_romfile_queue, _romfile) romfile_queue_t;
 
-static romfile_queue_t g_queue;
+static romfile_queue_t g_queue = STAILQ_HEAD_INITIALIZER(g_queue);
+
 
 /*
  * String hashing function as specified by the ELF ABI.
  */
-static u_int32_t strhash(const u_int8_t *name)
+static u_int32_t strhash(const char *name)
 {
+	u_int8_t *p = (u_int8_t*)name;
 	u_int32_t h = 0, g;
 
-	while (*name) {
-		h = (h << 4) + *name++;
+	while (*p) {
+		h = (h << 4) + *p++;
 		if ((g = (h & 0xf0000000)) != 0)
 			h ^= (g >> 24);
 		h &= ~g;
@@ -68,9 +70,7 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 	u_int32_t offset = 0;
 	int reset_found = 0;
 
-	STAILQ_INIT(queue);
-
-	/* find RESET module */
+	/* find RESET file */
 	lseek(fd, 0, SEEK_SET);
 	while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE) {
 		if (!strcmp(entry.name, "RESET")) {
@@ -85,14 +85,14 @@ static int __parse_file(int fd, romfile_queue_t *queue)
 	}
 
 	do {
-		/* add ROMDIR entry to queue */
+		/* add file to queue */
 		file = (romfile_t*)malloc(sizeof(romfile_t));
 		if (file == NULL)
 			return -1;
 		memcpy(file, &entry, ROMENT_SIZE); /* roment_t fits into romfile_t */
 		file->offset = offset;
 		file->data = NULL; /* we'll read the file data on demand */
-		file->hash = strhash((u_int8_t*)file->name);
+		file->hash = strhash(file->name);
 		STAILQ_INSERT_TAIL(queue, file, node);
 
 		/* offset must be aligned to 16 bytes */
@@ -159,7 +159,9 @@ static int romfile_extract(int fd, romfile_t *file)
 	return 0;
 }
 
-
+/*
+ * Search queue for file with a specific hash.
+ */
 static romfile_t *find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash)
 {
 	romfile_t *file = NULL;
@@ -172,12 +174,12 @@ static romfile_t *find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash
 	return file;
 }
 
-static void *romdir_init(struct fuse_conn_info *conn)
+static void *romdirfs_init(struct fuse_conn_info *conn)
 {
 	return NULL;
 }
 
-static void romdir_destroy(void *data)
+static void romdirfs_destroy(void *data)
 {
 	romfile_t *file;
 
@@ -189,7 +191,7 @@ static void romdir_destroy(void *data)
 	}
 }
 
-static int romdir_getattr(const char *path, struct stat *stbuf)
+static int romdirfs_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
 	u_int32_t hash;
@@ -203,7 +205,7 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 		stbuf->st_nlink = 2;
 		return 0;
 	} else {
-		hash = strhash((u_int8_t*)path + 1);
+		hash = strhash(path + 1);
 		file = find_file_by_hash(&g_queue, hash);
 		if (file != NULL) {
 			stbuf->st_mode = S_IFREG | 0444;
@@ -216,7 +218,7 @@ static int romdir_getattr(const char *path, struct stat *stbuf)
 	return -ENOENT;
 }
 
-static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int romdirfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	off_t offset, struct fuse_file_info *fi)
 {
 	romfile_t *file;
@@ -233,7 +235,7 @@ static int romdir_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int romdir_open(const char *path, struct fuse_file_info *fi)
+static int romdirfs_open(const char *path, struct fuse_file_info *fi)
 {
 	romfile_t *file;
 	u_int32_t hash;
@@ -241,7 +243,7 @@ static int romdir_open(const char *path, struct fuse_file_info *fi)
 	if (*path != '/')
 		return -ENOENT;
 
-	hash = strhash((u_int8_t*)path + 1);
+	hash = strhash(path + 1);
 	file = find_file_by_hash(&g_queue, hash);
 	if (file != NULL) {
 		if ((fi->flags & 3) != O_RDONLY)
@@ -253,7 +255,7 @@ static int romdir_open(const char *path, struct fuse_file_info *fi)
 	return -ENOENT;
 }
 
-static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
+static int romdirfs_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
 	romfile_t *file;
@@ -263,7 +265,7 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	if (*path != '/')
 		return -ENOENT;
 
-	hash = strhash((u_int8_t*)path + 1);
+	hash = strhash(path + 1);
 	file = find_file_by_hash(&g_queue, hash);
 	if (file != NULL) {
 		len = file->size;
@@ -280,14 +282,26 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 	return -ENOENT;
 }
 
-static struct fuse_operations romdir_ops = {
-	.init = romdir_init,
-	.destroy = romdir_destroy,
-	.getattr = romdir_getattr,
-	.readdir = romdir_readdir,
-	.open = romdir_open,
-	.read = romdir_read
+static struct fuse_operations romdirfs_ops = {
+	.init = romdirfs_init,
+	.destroy = romdirfs_destroy,
+	.getattr = romdirfs_getattr,
+	.readdir = romdirfs_readdir,
+	.open = romdirfs_open,
+	.read = romdirfs_read
 };
+
+#define ROMDIR_OPT(t, p, v) { t, offsetof(struct romdir, p), v }
+
+static struct fuse_opt romdir_opts[] = {
+	FUSE_OPT_END
+};
+
+static int romdir_opt_proc(void *data, const char *arg, int key,
+	struct fuse_args *outargs)
+{
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -304,6 +318,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+//	STAILQ_INIT(&g_queue);
 	if (__parse_file(fd, &g_queue) < 0) {
 		perror("parse_file");
 		close(fd);
@@ -316,7 +331,7 @@ int main(int argc, char *argv[])
 		//romfile_extract(fd, file);
 	}
 	close(fd);
-	ret = fuse_main(argc, argv, &romdir_ops, NULL);
+	ret = fuse_main(argc, argv, &romdirfs_ops, NULL);
 
 	return ret;
 }
