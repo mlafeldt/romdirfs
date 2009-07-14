@@ -1,4 +1,17 @@
 
+Usage
+
+mounting
+
+romdirfs <file> <mountpoint> [options]
+
+unmounting
+
+fusermount -u mountpoint
+
+
+Examples
+
 $ mount | grep romdirfs
 romdirfs on /tmp/romdir type fuse.romdirfs (rw,nosuid,nodev,user=misfire)
 

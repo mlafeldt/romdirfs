@@ -36,23 +36,6 @@
 
 static romfile_queue_t g_queue = STAILQ_HEAD_INITIALIZER(g_queue);
 
-static void *romdirfs_init(struct fuse_conn_info *conn)
-{
-	return NULL;
-}
-
-static void romdirfs_destroy(void *data)
-{
-	romfile_t *file;
-
-	/* clean up */
-	STAILQ_FOREACH(file, &g_queue, node) {
-		free(file->data);
-		STAILQ_REMOVE(&g_queue, file, _romfile, node);
-		free(file);
-	}
-}
-
 static int romdirfs_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
@@ -144,6 +127,23 @@ static int romdirfs_read(const char *path, char *buf, size_t size, off_t offset,
 	return -ENOENT;
 }
 
+static void *romdirfs_init(struct fuse_conn_info *conn)
+{
+	return NULL;
+}
+
+static void romdirfs_destroy(void *data)
+{
+	romfile_t *file;
+
+	/* clean up */
+	STAILQ_FOREACH(file, &g_queue, node) {
+		free(file->data);
+		STAILQ_REMOVE(&g_queue, file, _romfile, node);
+		free(file);
+	}
+}
+
 static struct fuse_operations romdirfs_ops = {
 	.init = romdirfs_init,
 	.destroy = romdirfs_destroy,
@@ -153,15 +153,38 @@ static struct fuse_operations romdirfs_ops = {
 	.read = romdirfs_read
 };
 
-#define ROMDIR_OPT(t, p, v) { t, offsetof(struct romdir, p), v }
+#define ROMDIRFS_OPT(t, p, v) { t, offsetof(struct romdirfs, p), v }
 
-static struct fuse_opt romdir_opts[] = {
+typedef struct {
+	char *file;
+} romdirfs_conf_t;
+
+static romdirfs_conf_t romdirfs_conf = {
+	.file = NULL
+};
+
+static struct fuse_opt romdirfs_opts[] = {
 	FUSE_OPT_END
 };
 
-static int romdir_opt_proc(void *data, const char *arg, int key,
+static int romdirfs_opt_proc(void *data, const char *arg, int key,
 	struct fuse_args *outargs)
 {
+	switch (key) {
+	case FUSE_OPT_KEY_OPT:
+		return 1;
+
+	case FUSE_OPT_KEY_NONOPT:
+		if (romdirfs_conf.file == NULL) {
+			romdirfs_conf.file = strdup(arg);
+			return 0;
+		}
+		return 1;
+
+	default:
+		exit(1);
+	}
+
 	return 0;
 }
 
@@ -169,21 +192,27 @@ int main(int argc, char *argv[])
 {
 	int fd, ret;
 	romfile_t *file;
-//	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	if (argc < 2)
+	if (fuse_opt_parse(&args, &romdirfs_conf, romdirfs_opts, romdirfs_opt_proc) == -1)
 		return -1;
 
-	fd = open("image.bin", O_RDONLY);
-	if (fd == -1) {
-		perror("open");
+	if (romdirfs_conf.file == NULL) {
+		fprintf(stderr, "usage: rom file missing\n");
 		return -1;
 	}
 
-//	STAILQ_INIT(&g_queue);
-	if (romdir_read(fd, &g_queue) < 0) {
-		perror("parse_file");
-		close(fd);
+	fd = open(romdirfs_conf.file, O_RDONLY);
+	if (fd == -1) {
+		fprintf(stderr, "Error: could not open rom file\n");
+		return -1;
+	}
+
+	STAILQ_INIT(&g_queue);
+	ret = romdir_read(fd, &g_queue);
+	close(fd);
+	if (ret < 0) {
+		fprintf(stderr, "Error: could not read from rom file\n");
 		return -1;
 	}
 
@@ -192,8 +221,11 @@ int main(int argc, char *argv[])
 			file->extinfo_size, file->size, file->offset,
 			file->offset + file->size);
 	}
-	close(fd);
-	ret = fuse_main(argc, argv, &romdirfs_ops, NULL);
+
+	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
+
+	free(romdirfs_conf.file);
+	fuse_opt_free_args(&args);
 
 	return ret;
 }

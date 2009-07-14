@@ -35,7 +35,7 @@
  * @size: entry size
  *
  * This data structure represents one entry in the ROMDIR entry table.  The
- * start of this table can be found by searching for the name "RESET".
+ * first entry is always "RESET" with zero bytes.
  */
 typedef struct _roment {
 	char		name[10];
