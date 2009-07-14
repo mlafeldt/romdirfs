@@ -172,6 +172,15 @@ static romfile_t *find_file_by_hash(const romfile_queue_t *queue, u_int32_t hash
 	return file;
 }
 
+static void *romdir_init(struct fuse_conn_info *conn)
+{
+	return NULL;
+}
+
+static void romdir_destroy(void *data)
+{
+}
+
 static int romdir_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
@@ -264,6 +273,8 @@ static int romdir_read(const char *path, char *buf, size_t size, off_t offset,
 }
 
 static struct fuse_operations romdir_ops = {
+	.init = romdir_init,
+	.destroy = romdir_destroy,
 	.getattr = romdir_getattr,
 	.readdir = romdir_readdir,
 	.open = romdir_open,
