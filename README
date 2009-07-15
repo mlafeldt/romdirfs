@@ -21,12 +21,27 @@ v1.0 (Jul 15 2009)
 
 TODO
 
+FUSE interface to export a virtual filesystem to the Linux kernel
+
 
 ---==---
    Build
 ---=====---
 
-TODO
+To compile romdirfs, you need the following Debian packages:
+- cmake
+- gcc
+- fuse-utils
+- libfuse-dev
+
+I recommend doing an out-of-source build:
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+
+To install romdirfs:
+# make install
 
 
 ---==---
@@ -40,11 +55,9 @@ ROMDIRFS options:
     -h, --help             print help
     -D, -o romdirfs_debug  print some debugging information
 
-FUSE options:
-...
+You can get the complete option list with -h.
 
-unmounting
-
+To unmount the filesystem:
 fusermount -u mountpoint
 
 
