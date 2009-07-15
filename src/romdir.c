@@ -75,21 +75,20 @@ int romdir_read(int fd, romdir_t *dir)
 
 	/* read ROMDIR entries and add them to the queue */
 	do {
-		/* those entries contain nothing but zeros - ignore them */
-		if (entry.name[0] == '-')
-			continue;
+		/* ignore "-" entries which contain only zeros */
+		if (entry.name[0] != '-') {
+			file = (romfile_t*)malloc(sizeof(romfile_t));
+			if (file == NULL)
+				return -1;
 
-		file = (romfile_t*)malloc(sizeof(romfile_t));
-		if (file == NULL)
-			return -1;
-
-		strcpy(file->name, entry.name);
-		file->size = entry.size;
-		file->extinfo_size = entry.extinfo_size;
-		file->offset = offset;
-		file->data = NULL; /* will be read later */
-		file->hash = strhash(file->name);
-		STAILQ_INSERT_TAIL(dir, file, node);
+			strcpy(file->name, entry.name);
+			file->size = entry.size;
+			file->extinfo_size = entry.extinfo_size;
+			file->offset = offset;
+			file->data = NULL; /* will be read later */
+			file->hash = strhash(file->name);
+			STAILQ_INSERT_TAIL(dir, file, node);
+		}
 
 		/* offset must be aligned to 16 bytes */
 		offset += ALIGN(entry.size, 0x10);
