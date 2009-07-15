@@ -51,9 +51,9 @@ u_int32_t strhash(const char *name)
 #define ALIGN(x, a)	(((x) + (a) - 1) & ~((a) - 1))
 
 /*
- * Parse file for ROMDIR entries and add them to the queue.
+ * Parse file for ROMDIR entries and add them to @dir.
  */
-int romdir_read(int fd, romfile_queue_t *queue)
+int romdir_read(int fd, romdir_t *dir)
 {
 	roment_t entry;
 	romfile_t *file = NULL;
@@ -89,7 +89,7 @@ int romdir_read(int fd, romfile_queue_t *queue)
 		file->offset = offset;
 		file->data = NULL; /* will be read later */
 		file->hash = strhash(file->name);
-		STAILQ_INSERT_TAIL(queue, file, node);
+		STAILQ_INSERT_TAIL(dir, file, node);
 
 		/* offset must be aligned to 16 bytes */
 		offset += ALIGN(entry.size, 0x10);
@@ -97,7 +97,7 @@ int romdir_read(int fd, romfile_queue_t *queue)
 	} while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE && entry.name[0]);
 
 	/* read data for each file */
-	STAILQ_FOREACH(file, queue, node) {
+	STAILQ_FOREACH(file, dir, node) {
 		if (!file->size)
 			continue;
 		if (lseek(fd, file->offset, SEEK_SET) == -1)
@@ -142,13 +142,13 @@ int romdir_extract(const romfile_t *file, const char *path)
 }
 
 /*
- * Search queue for file by hash.
+ * Search @dir for file by @hash.
  */
-romfile_t *romdir_find_file(const romfile_queue_t *queue, u_int32_t hash)
+romfile_t *romdir_find_file(const romdir_t *dir, u_int32_t hash)
 {
 	romfile_t *file = NULL;
 
-	STAILQ_FOREACH(file, queue, node) {
+	STAILQ_FOREACH(file, dir, node) {
 		if (hash == file->hash)
 			break;
 	}
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	int fd, ret;
 	const char *path = NULL;
 	romfile_t *file = NULL;
-	romfile_queue_t queue = STAILQ_HEAD_INITIALIZER(queue);
+	romdir_t dir = STAILQ_HEAD_INITIALIZER(dir);
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <rom file> [output path]\n", argv[0]);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	ret = romdir_read(fd, &queue);
+	ret = romdir_read(fd, &dir);
 	close(fd);
 	if (ret < 0) {
 		fprintf(stderr, "Error: could not read from rom file\n");
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 
 	printf("%-10s %-17s %8s %4s\n", "filename", "offset", "size", "ext");
 
-	STAILQ_FOREACH(file, &queue, node) {
+	STAILQ_FOREACH(file, &dir, node) {
 		printf("%-10s %08x-%08x %8i %4i\n", file->name, file->offset,
 			file->offset + file->size, file->size, file->extinfo_size);
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 				file->name);
 
 		free(file->data);
-		STAILQ_REMOVE(&queue, file, _romfile, node);
+		STAILQ_REMOVE(&dir, file, _romfile, node);
 		free(file);
 	}
 
