@@ -21,13 +21,13 @@ v1.0 (Jul 15 2009)
 ---==============---
 
 romdirfs was mainly developed because I was interested in the technology behind
-FUSE (Filesystem in Userspace) and wanted to write a simple FS on my own. With
+FUSE (Filesystem in Userspace) and wanted to write a simple FS on my own. (With
 the FUSE interface, you can easily export a virtual FS to the Linux kernel
-without root privileges.
+without root privileges.)
 
 romdirfs makes it possible to mount the ROMDIR "filesystem" which can be found
 in PS2 IOPRP images and BIOS dumps to a directory, thereby mapping the included
-IOP modules to actual files.
+IOP modules to actual files. The filesystem is read-only.
 
 
 ---==---
