@@ -1,10 +1,11 @@
----==============================---
-   romdirfs
+---======================================---
+   romdirfs - ROMDIR filesystem in userspace
    Copyright (C) 2009 misfire
----=================================---
+---=========================================---
 
 
-Welcome to romdirfs!
+Welcome to romdirfs! This program implements a virtual filesystem which allows
+you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
 
 
 ---============---
@@ -19,9 +20,14 @@ v1.0 (Jul 15 2009)
    About romdirfs
 ---==============---
 
-TODO
+romdirfs was mainly developed because I was interested in the technology behind
+FUSE (Filesystem in Userspace) and wanted to write a simple FS on my own. With
+the FUSE interface, you can easily export a virtual FS to the Linux kernel
+without root privileges.
 
-FUSE interface to export a virtual filesystem to the Linux kernel
+romdirfs makes it possible to mount the ROMDIR "filesystem" which can be found
+in PS2 IOPRP images and BIOS dumps to a directory, thereby mapping the included
+IOP modules to actual files.
 
 
 ---==---
@@ -48,7 +54,8 @@ To install romdirfs:
    Usage
 ---=====---
 
-usage: romdirfs file mountpoint [options]
+usage: romdirfs <file> <mountpoint> [options]
+<file> must be a PS2 IOPRP image or BIOS dump
 
 ROMDIRFS options:
     -V, --version          print version
@@ -58,14 +65,14 @@ ROMDIRFS options:
 You can get the complete option list with -h.
 
 To unmount the filesystem:
-fusermount -u mountpoint
+fusermount -u <mountpoint>
 
 
 ---=====--
    Samples
 ---=======---
 
-    1) Mounting an IOPRP image
+    1) Mounting a PS2 IOPRP image
 
 $ mkdir /tmp/romdir
 $ romdirfs ioprp15.img /tmp/romdir/
@@ -96,7 +103,7 @@ $ hd /tmp/romdir/ROMDIR
 
 $ fusermount -u /tmp/romdir/
 
-    2) Mounting a BIOS dump
+    2) Mounting a PS2 BIOS dump
 
 $ romdirfs SCPH-30004R_BIOS_V4_PAL_160.BIN /tmp/romdir/
 

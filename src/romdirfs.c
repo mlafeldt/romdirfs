@@ -57,7 +57,8 @@ static struct config g_config = {
 	do { if (g_config.debug) fprintf(stderr, args); } while (0)
 
 #define HELP_TEXT \
-	"usage: "APP_NAME" file mountpoint [options]\n\n" \
+	"usage: "APP_NAME" <file> <mountpoint> [options]\n" \
+	"<file> must be a PS2 IOPRP image or BIOS dump\n\n" \
 	"ROMDIRFS options:\n" \
 	"    -V, --version          print version\n" \
 	"    -h, --help             print help\n" \
