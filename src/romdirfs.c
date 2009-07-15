@@ -271,13 +271,17 @@ int main(int argc, char *argv[])
 			file->size, file->extinfo_size, file->hash);
 	}
 
+	/* use single-threaded mode */
+	fuse_opt_add_arg(&args, "-s");
+
 	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
 
 	DEBUG("fuse_main() returned %i\n", ret);
-	DEBUG("Cleaning up...\n");
+	DEBUG("cleaning up...\n");
 
 	STAILQ_FOREACH(file, &g_romdir, node) {
-		free(file->data);
+		if (file->data != NULL)
+			free(file->data);
 		STAILQ_REMOVE(&g_romdir, file, _romfile, node);
 		free(file);
 	}
