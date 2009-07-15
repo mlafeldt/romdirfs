@@ -41,23 +41,52 @@
 
 static romdir_t g_romdir = STAILQ_HEAD_INITIALIZER(g_romdir);
 
-
 struct config {
 	char *progname;
 	char *filename;
 	int debug;
 };
 
-static struct config romdirfs = {
+static struct config g_config = {
 	.progname = NULL,
 	.filename = NULL,
 	.debug = 0
 };
 
 #define DEBUG(args...) \
-	do { if (romdirfs.debug) fprintf(stderr, args); } while (0)
+	do { if (g_config.debug) fprintf(stderr, args); } while (0)
+
+#define HELP_TEXT \
+	"usage: "APP_NAME" file mountpoint [options]\n\n" \
+	"ROMDIRFS options:\n" \
+	"    -V, --version          print version\n" \
+	"    -h, --help             print help\n" \
+	"    -D, -o romdirfs_debug  print some debugging information\n\n"
+
+#define ROMDIRFS_OPT(t, p, v) { t, offsetof(struct config, p), v }
+
+enum {
+	KEY_HELP,
+	KEY_VERSION,
+	KEY_DEBUG
+};
+
+static struct fuse_opt g_opts[] = {
+	FUSE_OPT_KEY("-h",		KEY_HELP),
+	FUSE_OPT_KEY("--help",		KEY_HELP),
+	FUSE_OPT_KEY("-V",		KEY_VERSION),
+	FUSE_OPT_KEY("--version",	KEY_VERSION),
+	FUSE_OPT_KEY("-D",		KEY_DEBUG),
+	FUSE_OPT_KEY("romdirfs_debug",	KEY_DEBUG),
+	ROMDIRFS_OPT("-D",		debug, 1),
+	ROMDIRFS_OPT("romdirfs_debug",	debug, 1),
+	FUSE_OPT_END
+};
 
 
+/*
+ * Filesystem operations supported by ROMDIRFS
+ */
 
 static int romdirfs_getattr(const char *path, struct stat *stbuf)
 {
@@ -157,44 +186,12 @@ static struct fuse_operations romdirfs_ops = {
 	.read = romdirfs_read
 };
 
-
-static void usage(const char *progname)
-{
-	fprintf(stderr,
-"usage: %s file mountpoint [options]\n\n"
-"ROMDIRFS options:\n"
-"    -V, --version          print version\n"
-"    -h, --help             print help\n"
-"    -D, -o romdirfs_debug  print some debugging information\n\n",
-	progname);
-}
-
-enum {
-	KEY_HELP,
-	KEY_VERSION,
-	KEY_DEBUG
-};
-
-#define ROMDIRFS_OPT(t, p, v) { t, offsetof(struct config, p), v }
-
-static struct fuse_opt romdirfs_opts[] = {
-	FUSE_OPT_KEY("-h",		KEY_HELP),
-	FUSE_OPT_KEY("--help",		KEY_HELP),
-	FUSE_OPT_KEY("-V",		KEY_VERSION),
-	FUSE_OPT_KEY("--version",	KEY_VERSION),
-	FUSE_OPT_KEY("-D",		KEY_DEBUG),
-	FUSE_OPT_KEY("romdirfs_debug",	KEY_DEBUG),
-	ROMDIRFS_OPT("-D",		debug, 1),
-	ROMDIRFS_OPT("romdirfs_debug",	debug, 1),
-	FUSE_OPT_END
-};
-
 static int romdirfs_opt_proc(void *data, const char *arg, int key,
 	struct fuse_args *outargs)
 {
 	switch (key) {
 	case KEY_HELP:
-		usage(romdirfs.progname);
+		fprintf(stderr, HELP_TEXT);
 		fuse_opt_add_arg(outargs, "-ho");
 		fuse_main(outargs->argc, outargs->argv, &romdirfs_ops, NULL);
 		exit(1);
@@ -213,15 +210,15 @@ static int romdirfs_opt_proc(void *data, const char *arg, int key,
 		return 1;
 
 	case FUSE_OPT_KEY_NONOPT:
-		if (romdirfs.filename == NULL) {
-			romdirfs.filename = strdup(arg);
+		if (g_config.filename == NULL) {
+			g_config.filename = strdup(arg);
 			return 0;
 		}
 		return 1;
 
 	default:
 		fprintf(stderr, "%s: unknown option '%s'\n",
-			romdirfs.progname, arg);
+			g_config.progname, arg);
 		exit(1);
 	}
 
@@ -234,23 +231,23 @@ int main(int argc, char *argv[])
 	int fd, ret;
 	romfile_t *file = NULL;
 
-	romdirfs.progname = argv[0];
+	g_config.progname = argv[0];
 
-	if (fuse_opt_parse(&args, &romdirfs, romdirfs_opts, romdirfs_opt_proc) == -1)
+	if (fuse_opt_parse(&args, &g_config, g_opts, romdirfs_opt_proc) == -1)
 		exit(1);
 
-	if (romdirfs.filename == NULL) {
-		fprintf(stderr, "%s: missing file\n", romdirfs.progname);
+	if (g_config.filename == NULL) {
+		fprintf(stderr, "%s: missing file\n", g_config.progname);
 		exit(1);
 	}
 
-	DEBUG("progname: %s\n", romdirfs.progname);
-	DEBUG("filename: %s\n", romdirfs.filename);
+	DEBUG("progname: %s\n", g_config.progname);
+	DEBUG("filename: %s\n", g_config.filename);
 
-	fd = open(romdirfs.filename, O_RDONLY);
+	fd = open(g_config.filename, O_RDONLY);
 	if (fd == -1) {
 		fprintf(stderr, "Error: could not open file '%s'\n",
-			romdirfs.filename);
+			g_config.filename);
 		exit(1);
 	}
 
@@ -286,7 +283,7 @@ int main(int argc, char *argv[])
 		free(file);
 	}
 
-	free(romdirfs.filename);
+	free(g_config.filename);
 	fuse_opt_free_args(&args);
 
 	return ret;
