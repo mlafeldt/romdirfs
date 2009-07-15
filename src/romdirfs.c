@@ -41,6 +41,24 @@
 
 static romdir_t g_romdir = STAILQ_HEAD_INITIALIZER(g_romdir);
 
+
+struct config {
+	char *progname;
+	char *filename;
+	int debug;
+};
+
+static struct config romdirfs = {
+	.progname = NULL,
+	.filename = NULL,
+	.debug = 0
+};
+
+#define DEBUG(args...) \
+	do { if (romdirfs.debug) fprintf(stderr, args); } while (0)
+
+
+
 static int romdirfs_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
@@ -132,26 +150,7 @@ static int romdirfs_read(const char *path, char *buf, size_t size, off_t offset,
 	return -ENOENT;
 }
 
-static void *romdirfs_init(struct fuse_conn_info *conn)
-{
-	return NULL;
-}
-
-static void romdirfs_destroy(void *data)
-{
-	romfile_t *file;
-
-	/* clean up */
-	STAILQ_FOREACH(file, &g_romdir, node) {
-		free(file->data);
-		STAILQ_REMOVE(&g_romdir, file, _romfile, node);
-		free(file);
-	}
-}
-
 static struct fuse_operations romdirfs_ops = {
-	.init = romdirfs_init,
-	.destroy = romdirfs_destroy,
 	.getattr = romdirfs_getattr,
 	.readdir = romdirfs_readdir,
 	.open = romdirfs_open,
@@ -163,22 +162,12 @@ static void usage(const char *progname)
 {
 	fprintf(stderr,
 "usage: %s file mountpoint [options]\n\n"
-"romdirfs options:\n"
+"ROMDIRFS options:\n"
 "    -V, --version          print version\n"
 "    -h, --help             print help\n"
 "    -D, -o romdirfs_debug  print some debugging information\n\n",
 	progname);
 }
-
-struct config {
-	char *file;
-	int debug;
-};
-
-static struct config romdirfs_conf = {
-	.file = NULL,
-	.debug = 0
-};
 
 enum {
 	KEY_HELP,
@@ -200,15 +189,12 @@ static struct fuse_opt romdirfs_opts[] = {
 	FUSE_OPT_END
 };
 
-#define DEBUG(format, args...) \
-	do { if (romdirfs_conf.debug) fprintf(stderr, format, args); } while (0)
-
 static int romdirfs_opt_proc(void *data, const char *arg, int key,
 	struct fuse_args *outargs)
 {
 	switch (key) {
 	case KEY_HELP:
-		usage(outargs->argv[0]);
+		usage(romdirfs.progname);
 		fuse_opt_add_arg(outargs, "-ho");
 		fuse_main(outargs->argc, outargs->argv, &romdirfs_ops, NULL);
 		exit(1);
@@ -227,15 +213,15 @@ static int romdirfs_opt_proc(void *data, const char *arg, int key,
 		return 1;
 
 	case FUSE_OPT_KEY_NONOPT:
-		if (romdirfs_conf.file == NULL) {
-			romdirfs_conf.file = strdup(arg);
+		if (romdirfs.filename == NULL) {
+			romdirfs.filename = strdup(arg);
 			return 0;
 		}
 		return 1;
 
 	default:
 		fprintf(stderr, "%s: unknown option '%s'\n",
-			outargs->argv[0], arg);
+			romdirfs.progname, arg);
 		exit(1);
 	}
 
@@ -244,41 +230,59 @@ static int romdirfs_opt_proc(void *data, const char *arg, int key,
 
 int main(int argc, char *argv[])
 {
-	int fd, ret;
-	romfile_t *file;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	int fd, ret;
+	romfile_t *file = NULL;
 
-	if (fuse_opt_parse(&args, &romdirfs_conf, romdirfs_opts, romdirfs_opt_proc) == -1)
-		return -1;
+	romdirfs.progname = argv[0];
 
-	if (romdirfs_conf.file == NULL) {
-		fprintf(stderr, "usage: rom file missing\n");
-		return -1;
+	if (fuse_opt_parse(&args, &romdirfs, romdirfs_opts, romdirfs_opt_proc) == -1)
+		exit(1);
+
+	if (romdirfs.filename == NULL) {
+		fprintf(stderr, "%s: missing file\n", romdirfs.progname);
+		exit(1);
 	}
 
-	fd = open(romdirfs_conf.file, O_RDONLY);
+	DEBUG("progname: %s\n", romdirfs.progname);
+	DEBUG("filename: %s\n", romdirfs.filename);
+
+	fd = open(romdirfs.filename, O_RDONLY);
 	if (fd == -1) {
-		fprintf(stderr, "Error: could not open rom file\n");
-		return -1;
+		fprintf(stderr, "Error: could not open file '%s'\n",
+			romdirfs.filename);
+		exit(1);
 	}
 
 	STAILQ_INIT(&g_romdir);
 	ret = romdir_read(fd, &g_romdir);
 	close(fd);
 	if (ret < 0) {
-		fprintf(stderr, "Error: could not read from rom file\n");
-		return -1;
+		fprintf(stderr, "Error: could not read ROMDIR entries\n");
+		exit(1);
 	}
 
+	DEBUG("ROMDIR entries:\n");
+	DEBUG("%-10s %-17s %8s %4s %-8s\n",
+		"name", "offset", "size", "ext", "hash");
 	STAILQ_FOREACH(file, &g_romdir, node) {
-		printf("%-10s %08x  %04x %08x %08x-%08x\n", file->name, file->hash,
-			file->extinfo_size, file->size, file->offset,
-			file->offset + file->size);
+		DEBUG("%-10s %08x-%08x %8i %4i %08x\n",
+			file->name, file->offset, file->offset + file->size,
+			file->size, file->extinfo_size, file->hash);
 	}
 
 	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
 
-	free(romdirfs_conf.file);
+	DEBUG("fuse_main() returned %i\n", ret);
+	DEBUG("Cleaning up...\n");
+
+	STAILQ_FOREACH(file, &g_romdir, node) {
+		free(file->data);
+		STAILQ_REMOVE(&g_romdir, file, _romfile, node);
+		free(file);
+	}
+
+	free(romdirfs.filename);
 	fuse_opt_free_args(&args);
 
 	return ret;
