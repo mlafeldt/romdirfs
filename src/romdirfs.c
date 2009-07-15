@@ -244,6 +244,7 @@ int main(int argc, char *argv[])
 	DEBUG("progname: %s\n", g_config.progname);
 	DEBUG("filename: %s\n", g_config.filename);
 
+	/* open file and get ROMDIR entries */
 	fd = open(g_config.filename, O_RDONLY);
 	if (fd == -1) {
 		fprintf(stderr, "Error: could not open file '%s'\n",
@@ -271,6 +272,7 @@ int main(int argc, char *argv[])
 	/* use single-threaded mode */
 	fuse_opt_add_arg(&args, "-s");
 
+	/* do FUSE magic */
 	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
 
 	DEBUG("fuse_main() returned %i\n", ret);
