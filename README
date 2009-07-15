@@ -35,10 +35,10 @@ IOP modules to actual files.
 ---=====---
 
 To compile romdirfs, you need the following Debian packages:
-- cmake
+- cmake >= 2.6
 - gcc
 - fuse-utils
-- libfuse-dev
+- libfuse-dev >= 2.6
 
 I recommend doing an out-of-source build:
 $ mkdir build
