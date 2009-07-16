@@ -57,7 +57,7 @@ int romdir_read(int fd, romdir_t *dir)
 {
 	roment_t entry;
 	romfile_t *file = NULL;
-	u_int32_t offset = 0;
+	u_int32_t offset = 0, xinfo_offset = 0;
 	int reset_found = 0;
 
 	/* find ROMDIR entry named "RESET" */
@@ -75,18 +75,24 @@ int romdir_read(int fd, romdir_t *dir)
 
 	/* read ROMDIR entries and add them to the queue */
 	do {
-		/* ignore "-" entries which contain only zeros */
+		/* ignore "-" entries containing only zeros */
 		if (entry.name[0] != '-') {
-			file = (romfile_t*)malloc(sizeof(romfile_t));
+			file = (romfile_t*)calloc(1, sizeof(romfile_t));
 			if (file == NULL)
 				return -1;
 
 			strcpy(file->name, entry.name);
 			file->size = entry.size;
-			file->extinfo_size = entry.extinfo_size;
 			file->offset = offset;
 			file->data = NULL; /* will be read later */
 			file->hash = strhash(file->name);
+
+			if (entry.xinfo_size) {
+				file->xinfo_size = entry.xinfo_size;
+				file->xinfo_offset = xinfo_offset;
+				xinfo_offset += file->xinfo_size;
+			}
+
 			STAILQ_INSERT_TAIL(dir, file, node);
 		}
 
