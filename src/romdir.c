@@ -119,7 +119,7 @@ int romdir_read(int fd, romdir_t *dir)
 int romdir_extract(const romfile_t *file, const char *path)
 {
 	char fullpath[1024] = { 0 };
-	int fd;
+	int fd, err;
 
 	if (path != NULL) {
 		strcpy(fullpath, path);
@@ -133,7 +133,7 @@ int romdir_extract(const romfile_t *file, const char *path)
 		return -1;
 
 	if (file->data != NULL)
-		write(fd, file->data, file->size);
+		err = write(fd, file->data, file->size);
 
 	close(fd);
 
