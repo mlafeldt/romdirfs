@@ -43,10 +43,12 @@ typedef struct _roment {
 	u_int32_t	size;
 } roment_t;
 
-/* Well-known file name hashes */
+/* Some well-known file name hashes */
 #define HASH_RESET	0x0056a7a4
 #define HASH_ROMDIR	0x057418e2
 #define HASH_EXTINFO	0x0ad8e2ef
+#define HASH_ROMVER	0x05742aa2
+#define HASH_OSDSYS	0x054798e3
 
 /**
  * romfile_t - ROMDIR file information
