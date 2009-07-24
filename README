@@ -12,6 +12,9 @@ you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
    Version history
 ---===============---
 
+v1.1 (Jul xx 2009)
+* xxx
+
 v1.0 (Jul 15 2009)
 * Initial public release
 
@@ -25,8 +28,8 @@ FUSE (Filesystem in Userspace) and wanted to implement a simple FS on my own.
 (With the FUSE interface, you can easily export a virtual FS to the Linux
 kernel without root privileges.)
 
-romdirfs makes it possible to mount the ROMDIR "filesystem" which can be found
-in PS2 IOPRP images and BIOS dumps to a directory, thereby mapping the included
+romdirfs makes it possible to mount the ROMDIR "filesystem", which can be found
+in PS2 IOPRP images and BIOS dumps, to a directory, thereby mapping the included
 IOP modules to actual files. The filesystem is read-only.
 
 

@@ -21,7 +21,6 @@
 
 #include <sys/queue.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
@@ -29,6 +28,7 @@
 #include <fuse.h>
 #include <fuse_opt.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +37,7 @@
 
 #define APP_NAME	"romdirfs"
 #define APP_NAME_BIG	"ROMDIRFS"
-#define APP_VERSION	"1.0"
+#define APP_VERSION	"1.1"
 
 static romdir_t g_romdir = STAILQ_HEAD_INITIALIZER(g_romdir);
 
@@ -92,7 +92,7 @@ static struct fuse_opt g_opts[] = {
 static int romdirfs_getattr(const char *path, struct stat *stbuf)
 {
 	romfile_t *file;
-	u_int32_t hash;
+	uint32_t hash;
 
 	memset(stbuf, 0, sizeof(struct stat));
 
@@ -136,7 +136,7 @@ static int romdirfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int romdirfs_open(const char *path, struct fuse_file_info *fi)
 {
 	romfile_t *file;
-	u_int32_t hash;
+	uint32_t hash;
 
 	if (*path != '/')
 		return -ENOENT;
@@ -157,7 +157,7 @@ static int romdirfs_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
 	romfile_t *file;
-	u_int32_t hash;
+	uint32_t hash;
 	size_t len;
 
 	if (*path != '/')
@@ -271,9 +271,9 @@ int main(int argc, char *argv[])
 			file->xinfo_offset, file->xinfo_size);
 	}
 #if 0
-	u_int8_t *data = romdir_find_file(&g_romdir, HASH_EXTINFO)->data;
+	uint8_t *data = romdir_find_file(&g_romdir, HASH_EXTINFO)->data;
 	STAILQ_FOREACH(file, &g_romdir, node) {
-		u_int32_t *w = (u_int32_t*)&data[file->xinfo_offset];
+		uint32_t *w = (uint32_t*)&data[file->xinfo_offset];
 		if (file->xinfo_size) {
 			DEBUG("%-10s %08x %08x\n", file->name, w[0], w[1]);
 		}

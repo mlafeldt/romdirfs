@@ -21,8 +21,8 @@
 
 #include <sys/queue.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -33,10 +33,10 @@
  * @name: string to calculate hash from
  * @return: 32-bit hash value
  */
-u_int32_t strhash(const char *name)
+uint32_t strhash(const char *name)
 {
-	const u_int8_t *p = (u_int8_t*)name;
-	u_int32_t h = 0, g;
+	const uint8_t *p = (uint8_t*)name;
+	uint32_t h = 0, g;
 
 	while (*p) {
 		h = (h << 4) + *p++;
@@ -57,7 +57,7 @@ int romdir_read(int fd, romdir_t *dir)
 {
 	roment_t entry;
 	romfile_t *file = NULL;
-	u_int32_t offset = 0, xinfo_offset = 0;
+	uint32_t offset = 0, xinfo_offset = 0;
 	int reset_found = 0;
 
 	/* find ROMDIR entry named "RESET" */
@@ -107,7 +107,7 @@ int romdir_read(int fd, romdir_t *dir)
 			continue;
 		if (lseek(fd, file->offset, SEEK_SET) == -1)
 			return -1;
-		if ((file->data = (u_int8_t*)malloc(file->size)) == NULL)
+		if ((file->data = (uint8_t*)malloc(file->size)) == NULL)
 			return -1;
 		if (read(fd, file->data, file->size) != file->size) {
 			free(file->data);
@@ -149,7 +149,7 @@ int romdir_extract(const romfile_t *file, const char *path)
 /*
  * Search @dir for file by @hash.
  */
-romfile_t *romdir_find_file(const romdir_t *dir, u_int32_t hash)
+romfile_t *romdir_find_file(const romdir_t *dir, uint32_t hash)
 {
 	romfile_t *file = NULL;
 

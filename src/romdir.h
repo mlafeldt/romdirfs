@@ -23,7 +23,7 @@
 #define _ROMDIR_H_
 
 #include <sys/queue.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 /* Size of one ROMDIR entry */
 #define ROMENT_SIZE	16
@@ -39,8 +39,8 @@
  */
 typedef struct _roment {
 	char		name[10];
-	u_int16_t	xinfo_size;
-	u_int32_t	size;
+	uint16_t	xinfo_size;
+	uint32_t	size;
 } roment_t;
 
 /* Some well-known file name hashes */
@@ -64,13 +64,13 @@ typedef struct _roment {
  */
 typedef struct _romfile {
 	char		name[10];
-	u_int32_t	size;
-	u_int32_t	offset;
-	u_int8_t	*data;
-	u_int32_t	hash;
+	uint32_t	size;
+	uint32_t	offset;
+	uint8_t		*data;
+	uint32_t	hash;
 
-	u_int16_t	xinfo_size;
-	u_int32_t	xinfo_offset;
+	uint16_t	xinfo_size;
+	uint32_t	xinfo_offset;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
@@ -78,9 +78,9 @@ typedef struct _romfile {
 /* Queue to hold multiple ROMDIR files */
 typedef STAILQ_HEAD(_romdir, _romfile) romdir_t;
 
-u_int32_t strhash(const char *name);
+uint32_t strhash(const char *name);
 int romdir_read(int fd, romdir_t *dir);
 int romdir_extract(const romfile_t *file, const char *path);
-romfile_t *romdir_find_file(const romdir_t *dir, u_int32_t hash);
+romfile_t *romdir_find_file(const romdir_t *dir, uint32_t hash);
 
 #endif /* _ROMDIR_H_ */
