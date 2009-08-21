@@ -57,8 +57,7 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
 	roment_t *entry = NULL;
 	romfile_t *file = NULL;
-	off_t off = 0, xoff = 0;
-	size_t i;
+	off_t i, off = 0, xoff = 0;
 
 	/* find ROMDIR entry named "RESET" */
 	for (i = 0; i < length; i += sizeof(roment_t)) {

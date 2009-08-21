@@ -110,6 +110,7 @@ static int romdirfs_getattr(const char *path, struct stat *stbuf)
 			stbuf->st_mode = S_IFREG | 0444;
 			stbuf->st_nlink = 1;
 			stbuf->st_size = file->size;
+			/* TODO set file time and user/group IDs */
 			return 0;
 		}
 	}
@@ -230,10 +231,10 @@ static int romdirfs_opt_proc(void *data, const char *arg, int key,
 int main(int argc, char *argv[])
 {
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	int fd, ret;
 	romfile_t *file = NULL;
 	struct stat sb;
-	uint8_t *buf;
+	uint8_t *buf = NULL;
+	int fd, ret;
 
 	g_config.progname = argv[0];
 
@@ -245,40 +246,34 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	DEBUG("progname: %s\n", g_config.progname);
-	DEBUG("filename: %s\n", g_config.filename);
-
-	/* open file and get ROMDIR entries */
 	fd = open(g_config.filename, O_RDONLY);
 	if (fd == -1) {
 		fprintf(stderr, "Error: could not open file '%s'\n",
 			g_config.filename);
 		exit(1);
 	}
-
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		exit(1);
 	}
-
 	if (!S_ISREG(sb.st_mode)) {
 		fprintf(stderr, "Error: %s is not a file\n", g_config.filename);
 		exit(1);
 	}
-
-	if (sb.st_size > (4*1024*1024)) {
-		fprintf(stderr, "Error: file %s is too big\n", g_config.filename);
+	if (sb.st_size > (4*1024*1024)) { /* BIOS is 4MB in size */
+		fprintf(stderr, "Error: %s is too big\n", g_config.filename);
 		exit(1);
 	}
 
+	/* map file into memory */
 	buf = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	close(fd);
 	if (buf == MAP_FAILED) {
 		perror("mmap");
 		exit(1);
 	}
 
-	close(fd);
-
+	/* get ROMDIR entries */
 	STAILQ_INIT(&g_romdir);
 	ret = romdir_read(buf, sb.st_size, &g_romdir);
 	if (ret < 0) {
@@ -310,7 +305,7 @@ int main(int argc, char *argv[])
 	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
 
 	DEBUG("fuse_main() returned %i\n", ret);
-	DEBUG("cleaning up...\n");
+	DEBUG("clean up...\n");
 
 	STAILQ_FOREACH(file, &g_romdir, node) {
 		STAILQ_REMOVE(&g_romdir, file, _romfile, node);
