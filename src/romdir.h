@@ -76,7 +76,7 @@ typedef struct _romfile {
 typedef STAILQ_HEAD(_romdir, _romfile) romdir_t;
 
 uint32_t strhash(const char *name);
-int romdir_read(int fd, romdir_t *dir);
+int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir);
 int romdir_extract(const romfile_t *file, const char *path);
 romfile_t *romdir_find_file(const romdir_t *dir, uint32_t hash);
 

@@ -19,6 +19,7 @@
  * along with romdirfs.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sys/mman.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -231,6 +232,8 @@ int main(int argc, char *argv[])
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	int fd, ret;
 	romfile_t *file = NULL;
+	struct stat sb;
+	uint8_t *buf;
 
 	g_config.progname = argv[0];
 
@@ -253,9 +256,31 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	STAILQ_INIT(&g_romdir);
-	ret = romdir_read(fd, &g_romdir);
+	if (fstat(fd, &sb) == -1) {
+		perror("fstat");
+		exit(1);
+	}
+
+	if (!S_ISREG(sb.st_mode)) {
+		fprintf(stderr, "Error: %s is not a file\n", g_config.filename);
+		exit(1);
+	}
+
+	if (sb.st_size > (4*1024*1024)) {
+		fprintf(stderr, "Error: file %s is too big\n", g_config.filename);
+		exit(1);
+	}
+
+	buf = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	if (buf == MAP_FAILED) {
+		perror("mmap");
+		exit(1);
+	}
+
 	close(fd);
+
+	STAILQ_INIT(&g_romdir);
+	ret = romdir_read(buf, sb.st_size, &g_romdir);
 	if (ret < 0) {
 		fprintf(stderr, "Error: could not read ROMDIR entries\n");
 		exit(1);
@@ -289,10 +314,13 @@ int main(int argc, char *argv[])
 	DEBUG("cleaning up...\n");
 
 	STAILQ_FOREACH(file, &g_romdir, node) {
-		if (file->data != NULL)
-			free(file->data);
 		STAILQ_REMOVE(&g_romdir, file, _romfile, node);
 		free(file);
+	}
+
+	if (munmap(buf, sb.st_size) == -1) {
+		perror("munmap"),
+		exit(1);
 	}
 
 	free(g_config.filename);

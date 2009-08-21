@@ -53,23 +53,22 @@ uint32_t strhash(const char *name)
 /*
  * Parse file for ROMDIR entries and add them to @dir.
  */
-int romdir_read(int fd, romdir_t *dir)
+int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
 	roment_t entry;
 	romfile_t *file = NULL;
 	uint32_t offset = 0, extinfo_offset = 0;
 	int reset_found = 0;
 
+#if 0
 	/* find ROMDIR entry named "RESET" */
-	if (lseek(fd, 0, SEEK_SET) == -1)
-		return -1;
 	while (read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t)) {
 		if (!strcmp(entry.name, "RESET")) {
 			reset_found = 1;
 			break;
 		}
 	}
-
+#endif
 	if (!reset_found)
 		return -1;
 
@@ -99,8 +98,8 @@ int romdir_read(int fd, romdir_t *dir)
 		/* offset must be aligned to 16 bytes */
 		offset += ALIGN(entry.size, 0x10);
 
-	} while (read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t) && entry.name[0]);
-
+	} while (0); //(read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t) && entry.name[0]);
+#if 0
 	/* read data for each file */
 	STAILQ_FOREACH(file, dir, node) {
 		if (!file->size)
@@ -115,7 +114,7 @@ int romdir_read(int fd, romdir_t *dir)
 			return -1;
 		}
 	}
-
+#endif
 	return 0;
 }
 
