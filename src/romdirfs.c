@@ -288,11 +288,11 @@ int main(int argc, char *argv[])
 		DEBUG("%-10s %08x %08x-%08x %8i %08x %8i\n",
 			file->name, file->hash, (uint32_t)file->offset,
 			(uint32_t)(file->offset + file->size),
-			(uint32_t)file->size, (uint32_t)file->extinfo_offset,
-			(uint32_t)file->extinfo_size);
-#if 0 
-		if (file->extinfo_size > 0) {
-			uint32_t *w = (uint32_t*)file->extinfo_data;
+			(uint32_t)file->size, (uint32_t)file->xi_offset,
+			(uint32_t)file->xi_size);
+#if 0
+		if (file->xi_data != NULL) {
+			uint32_t *w = (uint32_t*)file->xi_data;
 			DEBUG("%08x %08x\n", w[0], w[1]);
 		}
 #endif

@@ -85,10 +85,10 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 			if (file->size > 0)
 				file->data = &buf[off];
 
-			if (entry->extinfo_size) {
-				file->extinfo_offset = xoff;
-				file->extinfo_size = entry->extinfo_size;
-				xoff += file->extinfo_size;
+			if (entry->xi_size) {
+				file->xi_offset = xoff;
+				file->xi_size = entry->xi_size;
+				xoff += file->xi_size;
 			}
 
 			STAILQ_INSERT_TAIL(dir, file, node);
@@ -102,8 +102,8 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 	xinfo = romdir_find_file(dir, HASH_EXTINFO);
 	if (xinfo != NULL) {
 		STAILQ_FOREACH(file, dir, node) {
-			if (file->hash != HASH_EXTINFO && file->extinfo_size > 0)
-				file->extinfo_data = xinfo->data + file->extinfo_offset;
+			if (file->hash != HASH_EXTINFO && file->xi_size > 0)
+				file->xi_data = xinfo->data + file->xi_offset;
 		}
 	}
 

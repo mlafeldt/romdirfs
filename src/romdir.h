@@ -28,7 +28,7 @@
 /**
  * roment_t - ROMDIR entry
  * @name: entry name
- * @extinfo_size: size of information in "EXTINFO" for this entry
+ * @xi_size: size of information in "EXTINFO" for this entry
  * @size: entry size
  *
  * This data structure represents one entry in the ROMDIR entry table.  The
@@ -36,25 +36,20 @@
  */
 typedef struct _roment {
 	char		name[10];
-	uint16_t	extinfo_size;
+	uint16_t	xi_size;
 	uint32_t	size;
 } roment_t;
-
-/* Some well-known file name hashes */
-#define HASH_RESET	0x0056a7a4
-#define HASH_ROMDIR	0x057418e2
-#define HASH_EXTINFO	0x0ad8e2ef
-#define HASH_ROMVER	0x05742aa2
-#define HASH_OSDSYS	0x054798e3
 
 /**
  * romfile_t - ROMDIR file information
  * @name: file name
  * @hash: file name hash for fast searching
+ * @offset: file offset of data
  * @size: file size
  * @data: pointer to file data, or NULL if size is 0
- * @extinfo_size: size of information in "EXTINFO" for this entry
- * @extinfo_offset: offset of information in "EXTINFO" for this entry
+ * @xi_offset: offset of information in EXTINFO for this entry
+ * @xi_size: size of information in EXTINFO for this entry
+ * @xi_data: pointer to EXTINFO data, or NULL if @xi_size is 0
  *
  * This structure is used to hold the data and metadata of a ROMDIR file.
  */
@@ -64,15 +59,22 @@ typedef struct _romfile {
 	off_t		offset;
 	size_t		size;
 	const uint8_t	*data;
-	off_t		extinfo_offset;
-	size_t		extinfo_size;
-	const uint8_t	*extinfo_data;
+	off_t		xi_offset;
+	size_t		xi_size;
+	const uint8_t	*xi_data;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
 
 /* Queue to hold multiple ROMDIR files */
 typedef STAILQ_HEAD(_romdir, _romfile) romdir_t;
+
+/* Some well-known file name hashes */
+#define HASH_RESET	0x0056a7a4
+#define HASH_ROMDIR	0x057418e2
+#define HASH_EXTINFO	0x0ad8e2ef
+#define HASH_ROMVER	0x05742aa2
+#define HASH_OSDSYS	0x054798e3
 
 uint32_t strhash(const char *name);
 int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir);
