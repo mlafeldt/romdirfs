@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 		DEBUG("%-10s %08x %08x-%08x %8i %08x %8i\n",
 			file->name, file->hash, file->offset,
 			file->offset + file->size, file->size,
-			file->xinfo_offset, file->xinfo_size);
+			file->extinfo_offset, file->extinfo_size);
 	}
 #if 0
 	uint8_t *data = romdir_find_file(&g_romdir, HASH_EXTINFO)->data;

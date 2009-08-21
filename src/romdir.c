@@ -57,13 +57,13 @@ int romdir_read(int fd, romdir_t *dir)
 {
 	roment_t entry;
 	romfile_t *file = NULL;
-	uint32_t offset = 0, xinfo_offset = 0;
+	uint32_t offset = 0, extinfo_offset = 0;
 	int reset_found = 0;
 
 	/* find ROMDIR entry named "RESET" */
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return -1;
-	while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE) {
+	while (read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t)) {
 		if (!strcmp(entry.name, "RESET")) {
 			reset_found = 1;
 			break;
@@ -87,10 +87,10 @@ int romdir_read(int fd, romdir_t *dir)
 			file->data = NULL; /* will be read later */
 			file->hash = strhash(file->name);
 
-			if (entry.xinfo_size) {
-				file->xinfo_size = entry.xinfo_size;
-				file->xinfo_offset = xinfo_offset;
-				xinfo_offset += file->xinfo_size;
+			if (entry.extinfo_size) {
+				file->extinfo_size = entry.extinfo_size;
+				file->extinfo_offset = extinfo_offset;
+				extinfo_offset += file->extinfo_size;
 			}
 
 			STAILQ_INSERT_TAIL(dir, file, node);
@@ -99,7 +99,7 @@ int romdir_read(int fd, romdir_t *dir)
 		/* offset must be aligned to 16 bytes */
 		offset += ALIGN(entry.size, 0x10);
 
-	} while (read(fd, &entry, ROMENT_SIZE) == ROMENT_SIZE && entry.name[0]);
+	} while (read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t) && entry.name[0]);
 
 	/* read data for each file */
 	STAILQ_FOREACH(file, dir, node) {

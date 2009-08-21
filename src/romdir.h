@@ -25,13 +25,10 @@
 #include <sys/queue.h>
 #include <stdint.h>
 
-/* Size of one ROMDIR entry */
-#define ROMENT_SIZE	16
-
 /**
  * roment_t - ROMDIR entry
  * @name: entry name
- * @xinfo_size: size of information in "EXTINFO" for this entry
+ * @extinfo_size: size of information in "EXTINFO" for this entry
  * @size: entry size
  *
  * This data structure represents one entry in the ROMDIR entry table.  The
@@ -39,7 +36,7 @@
  */
 typedef struct _roment {
 	char		name[10];
-	uint16_t	xinfo_size;
+	uint16_t	extinfo_size;
 	uint32_t	size;
 } roment_t;
 
@@ -57,8 +54,8 @@ typedef struct _roment {
  * @offset: file offset of data
  * @data: buffer holding file data, or NULL if size is 0
  * @hash: file name hash for fast searching
- * @xinfo_size: size of information in "EXTINFO" for this entry
- * @xinfo_offset: offset of information in "EXTINFO" for this entry
+ * @extinfo_size: size of information in "EXTINFO" for this entry
+ * @extinfo_offset: offset of information in "EXTINFO" for this entry
  *
  * This structure is used to hold the data and metadata of a ROMDIR file.
  */
@@ -69,8 +66,8 @@ typedef struct _romfile {
 	uint8_t		*data;
 	uint32_t	hash;
 
-	uint16_t	xinfo_size;
-	uint32_t	xinfo_offset;
+	uint16_t	extinfo_size;
+	uint32_t	extinfo_offset;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
