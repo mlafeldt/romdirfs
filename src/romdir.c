@@ -57,29 +57,22 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
 	roment_t *entry = NULL;
 	romfile_t *file = NULL;
-	uint32_t off = 0, xoff = 0;
-	int reset_found = 0;
-
-	if (length < sizeof(roment_t))
-		return -1;
+	off_t off = 0, xoff = 0;
+	size_t i;
 
 	/* find ROMDIR entry named "RESET" */
-	while (off <= (length - sizeof(roment_t))) {
-		if (!strcmp((char*)(buf + off), "RESET")) {
-			reset_found = 1;
+	for (i = 0; i < length; i += sizeof(roment_t)) {
+		if (!strcmp((char*)&buf[i], "RESET")) {
+			entry = (roment_t*)&buf[i];
 			break;
 		}
-		off += sizeof(roment_t);
 	}
 
-	if (!reset_found)
+	if (entry == NULL)
 		return -1;
 
-	entry = (roment_t*)(buf + off);
-	off = 0;
-
 	/* add ROMDIR entries to queue */
-	while (entry->name[0]) {
+	do {
 		/* ignore "-" entries containing only zeros */
 		if (entry->name[0] != '-') {
 			file = (romfile_t*)calloc(1, sizeof(romfile_t));
@@ -102,8 +95,7 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 
 		/* offset must be aligned to 16 bytes */
 		off += ALIGN(entry->size, 0x10);
-		entry++;
-	}
+	} while ((++entry)->name[0]);
 
 	return 0;
 }

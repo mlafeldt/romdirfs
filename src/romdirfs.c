@@ -291,8 +291,8 @@ int main(int argc, char *argv[])
 		"name", "hash", "size", "xi_off", "xi_size");
 	STAILQ_FOREACH(file, &g_romdir, node) {
 		DEBUG("%-10s %08x %8i %08x %8i\n",
-			file->name, file->hash, file->size,
-			file->extinfo_offset, file->extinfo_size);
+			file->name, file->hash, (uint32_t)file->size,
+			(uint32_t)file->extinfo_offset, (uint32_t)file->extinfo_size);
 	}
 #if 0
 	uint8_t *data = romdir_find_file(&g_romdir, HASH_EXTINFO)->data;

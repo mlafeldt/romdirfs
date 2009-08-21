@@ -61,10 +61,10 @@ typedef struct _roment {
 typedef struct _romfile {
 	char		name[10];
 	uint32_t	hash;
-	uint32_t	size;
+	size_t		size;
 	const uint8_t	*data;
-	uint16_t	extinfo_size;
-	uint32_t	extinfo_offset;
+	size_t		extinfo_size;
+	off_t		extinfo_offset;
 
 	STAILQ_ENTRY(_romfile) node;
 } romfile_t;
