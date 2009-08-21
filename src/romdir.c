@@ -81,8 +81,9 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 
 			strcpy(file->name, entry->name);
 			file->hash = strhash(file->name);
-			file->data = &buf[off];
 			file->size = entry->size;
+			if (file->size > 0)
+				file->data = &buf[off];
 
 			if (entry->extinfo_size) {
 				file->extinfo_offset = xoff;

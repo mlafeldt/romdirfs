@@ -52,7 +52,7 @@ typedef struct _roment {
  * @name: file name
  * @hash: file name hash for fast searching
  * @size: file size
- * @data: buffer holding file data, or NULL if size is 0
+ * @data: pointer to file data, or NULL if size is 0
  * @extinfo_size: size of information in "EXTINFO" for this entry
  * @extinfo_offset: offset of information in "EXTINFO" for this entry
  *
