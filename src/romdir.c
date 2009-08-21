@@ -151,12 +151,12 @@ int romdir_extract(const romfile_t *file, const char *path)
  */
 romfile_t *romdir_find_file(const romdir_t *dir, uint32_t hash)
 {
-	romfile_t *file = NULL;
+	romfile_t *file;
 
 	STAILQ_FOREACH(file, dir, node) {
 		if (hash == file->hash)
-			break;
+			return file;
 	}
 
-	return file;
+	return NULL;
 }
