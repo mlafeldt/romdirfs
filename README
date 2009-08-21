@@ -12,11 +12,12 @@ you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
    Version history
 ---===============---
 
-v1.1 (Jul xx 2009)
-* xxx
+1.1 (Aug xx 2009)
+- Map input file into memory using mmap().
+- Support extinfo offset.
 
-v1.0 (Jul 15 2009)
-* Initial public release
+1.0 (Jul 15 2009)
+- Initial public release
 
 
 ---===========---
@@ -37,7 +38,7 @@ IOP modules to actual files. The filesystem is read-only.
    Build
 ---=====---
 
-To compile romdirfs, you need the following Debian packages:
+To compile and use romdirfs, you need the following Debian packages:
 - cmake >= 2.6
 - gcc
 - fuse-utils
