@@ -281,23 +281,23 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	DEBUG("ROMDIR entries:\n");
-	DEBUG("%-10s %-8s %8s %-8s %8s\n",
-		"name", "hash", "size", "xi_off", "xi_size");
-	STAILQ_FOREACH(file, &g_romdir, node) {
-		DEBUG("%-10s %08x %8i %08x %8i\n",
-			file->name, file->hash, (uint32_t)file->size,
-			(uint32_t)file->extinfo_offset, (uint32_t)file->extinfo_size);
-	}
-#if 0
-	uint8_t *data = romdir_find_file(&g_romdir, HASH_EXTINFO)->data;
-	STAILQ_FOREACH(file, &g_romdir, node) {
-		uint32_t *w = (uint32_t*)&data[file->xinfo_offset];
-		if (file->xinfo_size) {
-			DEBUG("%-10s %08x %08x\n", file->name, w[0], w[1]);
+ 	DEBUG("ROMDIR entries:\n");
+	DEBUG("%-10s %-8s %-17s %8s %-8s %8s\n",
+		"name", "hash", "offset", "size", "xi_off", "xi_size");
+ 	STAILQ_FOREACH(file, &g_romdir, node) {
+		DEBUG("%-10s %08x %08x-%08x %8i %08x %8i\n",
+			file->name, file->hash, (uint32_t)file->offset,
+			(uint32_t)(file->offset + file->size),
+			(uint32_t)file->size, (uint32_t)file->extinfo_offset,
+			(uint32_t)file->extinfo_size);
+#if 0 
+		if (file->extinfo_size > 0) {
+			uint32_t *w = (uint32_t*)file->extinfo_data;
+			DEBUG("%08x %08x\n", w[0], w[1]);
 		}
-	}
 #endif
+	}
+
 	/* use single-threaded mode */
 	fuse_opt_add_arg(&args, "-s");
 

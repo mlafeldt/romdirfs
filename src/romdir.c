@@ -56,7 +56,7 @@ uint32_t strhash(const char *name)
 int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
 	roment_t *entry = NULL;
-	romfile_t *file = NULL;
+	romfile_t *file = NULL, *xinfo = NULL;
 	off_t i, off = 0, xoff = 0;
 
 	/* find ROMDIR entry named "RESET" */
@@ -80,6 +80,7 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 
 			strcpy(file->name, entry->name);
 			file->hash = strhash(file->name);
+			file->offset = off;
 			file->size = entry->size;
 			if (file->size > 0)
 				file->data = &buf[off];
@@ -96,6 +97,15 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 		/* offset must be aligned to 16 bytes */
 		off += ALIGN(entry->size, 0x10);
 	} while ((++entry)->name[0]);
+
+	/* get extinfo for each file */
+	xinfo = romdir_find_file(dir, HASH_EXTINFO);
+	if (xinfo != NULL) {
+		STAILQ_FOREACH(file, dir, node) {
+			if (file->hash != HASH_EXTINFO && file->extinfo_size > 0)
+				file->extinfo_data = xinfo->data + file->extinfo_offset;
+		}
+	}
 
 	return 0;
 }
