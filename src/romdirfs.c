@@ -260,8 +260,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Error: %s is not a file\n", g_config.filename);
 		exit(1);
 	}
-	if (sb.st_size > (4*1024*1024)) { /* BIOS is 4MB in size */
-		fprintf(stderr, "Error: %s is too big\n", g_config.filename);
+	if (!sb.st_size || sb.st_size > (4*1024*1024)) { /* BIOS is 4MB in size */
+		fprintf(stderr, "Error: invalid file size\n");
 		exit(1);
 	}
 
