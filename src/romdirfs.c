@@ -287,12 +287,11 @@ int main(int argc, char *argv[])
 	}
 
 	DEBUG("ROMDIR entries:\n");
-	DEBUG("%-10s %-8s %-17s %8s %-8s %8s\n",
-		"name", "hash", "offset", "size", "xi_off", "xi_size");
+	DEBUG("%-10s %-8s %8s %-8s %8s\n",
+		"name", "hash", "size", "xi_off", "xi_size");
 	STAILQ_FOREACH(file, &g_romdir, node) {
-		DEBUG("%-10s %08x %08x-%08x %8i %08x %8i\n",
-			file->name, file->hash, file->offset,
-			file->offset + file->size, file->size,
+		DEBUG("%-10s %08x %8i %08x %8i\n",
+			file->name, file->hash, file->size,
 			file->extinfo_offset, file->extinfo_size);
 	}
 #if 0

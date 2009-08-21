@@ -55,66 +55,56 @@ uint32_t strhash(const char *name)
  */
 int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
-	roment_t entry;
+	roment_t *entry = NULL;
 	romfile_t *file = NULL;
-	uint32_t offset = 0, extinfo_offset = 0;
+	uint32_t off = 0, xoff = 0;
 	int reset_found = 0;
 
-#if 0
+	if (length < sizeof(roment_t))
+		return -1;
+
 	/* find ROMDIR entry named "RESET" */
-	while (read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t)) {
-		if (!strcmp(entry.name, "RESET")) {
+	while (off <= (length - sizeof(roment_t))) {
+		if (!strcmp((char*)(buf + off), "RESET")) {
 			reset_found = 1;
 			break;
 		}
+		off += sizeof(roment_t);
 	}
-#endif
+
 	if (!reset_found)
 		return -1;
 
-	/* read ROMDIR entries and add them to the queue */
-	do {
+	entry = (roment_t*)(buf + off);
+	off = 0;
+
+	/* add ROMDIR entries to queue */
+	while (entry->name[0]) {
 		/* ignore "-" entries containing only zeros */
-		if (entry.name[0] != '-') {
+		if (entry->name[0] != '-') {
 			file = (romfile_t*)calloc(1, sizeof(romfile_t));
 			if (file == NULL)
 				return -1;
 
-			strcpy(file->name, entry.name);
-			file->size = entry.size;
-			file->offset = offset;
-			file->data = NULL; /* will be read later */
+			strcpy(file->name, entry->name);
 			file->hash = strhash(file->name);
+			file->data = &buf[off];
+			file->size = entry->size;
 
-			if (entry.extinfo_size) {
-				file->extinfo_size = entry.extinfo_size;
-				file->extinfo_offset = extinfo_offset;
-				extinfo_offset += file->extinfo_size;
+			if (entry->extinfo_size) {
+				file->extinfo_offset = xoff;
+				file->extinfo_size = entry->extinfo_size;
+				xoff += file->extinfo_size;
 			}
 
 			STAILQ_INSERT_TAIL(dir, file, node);
 		}
 
 		/* offset must be aligned to 16 bytes */
-		offset += ALIGN(entry.size, 0x10);
-
-	} while (0); //(read(fd, &entry, sizeof(roment_t)) == sizeof(roment_t) && entry.name[0]);
-#if 0
-	/* read data for each file */
-	STAILQ_FOREACH(file, dir, node) {
-		if (!file->size)
-			continue;
-		if (lseek(fd, file->offset, SEEK_SET) == -1)
-			return -1;
-		if ((file->data = (uint8_t*)malloc(file->size)) == NULL)
-			return -1;
-		if (read(fd, file->data, file->size) != file->size) {
-			free(file->data);
-			file->data = NULL;
-			return -1;
-		}
+		off += ALIGN(entry->size, 0x10);
+		entry++;
 	}
-#endif
+
 	return 0;
 }
 

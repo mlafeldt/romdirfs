@@ -50,10 +50,9 @@ typedef struct _roment {
 /**
  * romfile_t - ROMDIR file information
  * @name: file name
- * @size: file size
- * @offset: file offset of data
- * @data: buffer holding file data, or NULL if size is 0
  * @hash: file name hash for fast searching
+ * @size: file size
+ * @data: buffer holding file data, or NULL if size is 0
  * @extinfo_size: size of information in "EXTINFO" for this entry
  * @extinfo_offset: offset of information in "EXTINFO" for this entry
  *
@@ -61,11 +60,9 @@ typedef struct _roment {
  */
 typedef struct _romfile {
 	char		name[10];
-	uint32_t	size;
-	uint32_t	offset;
-	uint8_t		*data;
 	uint32_t	hash;
-
+	uint32_t	size;
+	const uint8_t	*data;
 	uint16_t	extinfo_size;
 	uint32_t	extinfo_offset;
 
