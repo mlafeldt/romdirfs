@@ -265,11 +265,27 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+#ifdef USE_MMAP
 	/* map file into memory */
 	buf = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	close(fd);
 	if (buf == MAP_FAILED) {
 		perror("mmap");
+		exit(1);
+	}
+#else
+	/* read file contents into allocated memory */
+	buf = malloc(sb.st_size);
+	if (buf == NULL) {
+		perror("malloc");
+		exit(1);
+	}
+	if (read(fd, buf, sb.st_size) != sb.st_size) {
+		perror("read");
+		exit(1);
+	}
+#endif
+	if (close(fd) == -1) {
+		perror("close");
 		exit(1);
 	}
 
@@ -312,11 +328,14 @@ int main(int argc, char *argv[])
 		free(file);
 	}
 
+#ifdef USE_MMAP
 	if (munmap(buf, sb.st_size) == -1) {
 		perror("munmap"),
 		exit(1);
 	}
-
+#else
+	free(buf);
+#endif
 	free(g_config.filename);
 	fuse_opt_free_args(&args);
 

@@ -13,7 +13,7 @@ you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
 ---===============---
 
 1.1 (Aug xx 2009)
-- Map input file into memory using mmap().
+- Optionally map input file into memory using mmap().
 - Support extinfo offset.
 
 1.0 (Jul 15 2009)
