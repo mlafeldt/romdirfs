@@ -54,7 +54,7 @@ static struct config g_config = {
 	.debug = 0
 };
 
-#define DEBUG(args...) \
+#define D_PRINTF(args...) \
 	do { if (g_config.debug) fprintf(stderr, args); } while (0)
 
 #define HELP_TEXT \
@@ -297,19 +297,21 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
- 	DEBUG("ROMDIR entries:\n");
-	DEBUG("%-10s %-8s %-17s %8s %-8s %8s\n",
+ 	D_PRINTF("ROMDIR entries:\n");
+	D_PRINTF("%-10s %-8s %-17s %8s %-8s %8s\n",
 		"name", "hash", "offset", "size", "xi_off", "xi_size");
  	STAILQ_FOREACH(file, &g_romdir, node) {
-		DEBUG("%-10s %08x %08x-%08x %8i %08x %8i\n",
+		D_PRINTF("%-10s %08x %08x-%08x %8i %08x %8i\n",
 			file->name, file->hash, (uint32_t)file->offset,
 			(uint32_t)(file->offset + file->size),
 			(uint32_t)file->size, (uint32_t)file->xi_offset,
 			(uint32_t)file->xi_size);
 #if 0
 		if (file->xi_data != NULL) {
-			uint32_t *w = (uint32_t*)file->xi_data;
-			DEBUG("%08x %08x\n", w[0], w[1]);
+			int i;
+			for (i = 0; i < file->xi_size; i++)
+				D_PRINTF("%02x ", file->xi_data[i]);
+			D_PRINTF("\n");
 		}
 #endif
 	}
@@ -320,8 +322,8 @@ int main(int argc, char *argv[])
 	/* do FUSE magic */
 	ret = fuse_main(args.argc, args.argv, &romdirfs_ops, NULL);
 
-	DEBUG("fuse_main() returned %i\n", ret);
-	DEBUG("clean up...\n");
+	D_PRINTF("fuse_main() returned %i\n", ret);
+	D_PRINTF("clean up...\n");
 
 	STAILQ_FOREACH(file, &g_romdir, node) {
 		STAILQ_REMOVE(&g_romdir, file, _romfile, node);

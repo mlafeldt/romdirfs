@@ -68,7 +68,7 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 	}
 
 	if (entry == NULL)
-		return -1;
+		return -1; /* RESET not found */
 
 	/* add ROMDIR entries to queue */
 	do {
