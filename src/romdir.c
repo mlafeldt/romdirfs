@@ -51,7 +51,7 @@ uint32_t strhash(const char *name)
 #define ALIGN(x, a)	(((x) + (a) - 1) & ~((a) - 1))
 
 /*
- * Parse file for ROMDIR entries and add them to @dir.
+ * Parse buffer @buf for ROMDIR entries and add them to @dir.
  */
 int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 {
@@ -111,7 +111,7 @@ int romdir_read(const uint8_t *buf, size_t length, romdir_t *dir)
 }
 
 /*
- * Extract file from ROMDIR fs to path.
+ * Extract @file from ROMDIR fs to @path.
  */
 int romdir_extract(const romfile_t *file, const char *path)
 {
