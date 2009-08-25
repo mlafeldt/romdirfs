@@ -47,7 +47,7 @@ To compile and use romdirfs, you need the following Debian packages:
 I recommend doing an out-of-source build:
 $ mkdir build
 $ cd build
-$ cmake ..
+$ cmake ../src/
 $ make
 
 To install romdirfs:

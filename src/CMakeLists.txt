@@ -1,3 +1,7 @@
+PROJECT("romdirfs" C)
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
 INCLUDE(${CMAKE_ROOT}/Modules/FindPkgConfig.cmake)
 PKG_CHECK_MODULES(FUSE fuse>=2.6)
 
