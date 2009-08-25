@@ -4,7 +4,7 @@
 ---=========================================---
 
 
-Welcome to romdirfs! This program implements a virtual filesystem which allows
+Welcome to romdirfs! This Linux program implements a virtual filesystem allowing
 you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
 
 
@@ -12,9 +12,10 @@ you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
    Version history
 ---===============---
 
-1.1 (Aug xx 2009)
-- Optionally map input file into memory using mmap().
-- Support extinfo offset.
+1.1 (Aug 25 2009)
+- Read whole input file into memory rather than reading each module's data.
+- Define -DUSE_MMAP to map the input file into memory with mmap().
+- Add EXTINFO information to romfile_t struct.
 
 1.0 (Jul 15 2009)
 - Initial public release
