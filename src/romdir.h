@@ -26,21 +26,6 @@
 #include <stdint.h>
 
 /**
- * roment_t - ROMDIR entry
- * @name: entry name
- * @xi_size: size of information in "EXTINFO" for this entry
- * @size: entry size
- *
- * This data structure represents one entry in the ROMDIR entry table.  The
- * first entry is always "RESET", followed by "ROMDIR" and "EXTINFO".
- */
-typedef struct _roment {
-	char		name[10];
-	uint16_t	xi_size;
-	uint32_t	size;
-} roment_t;
-
-/**
  * romfile_t - ROMDIR file information
  * @name: file name
  * @hash: file name hash for fast searching
