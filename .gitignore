@@ -1,5 +1,2 @@
-syntax: glob
-
-build/
-old/
-release/
+*.o
+romdirfs
