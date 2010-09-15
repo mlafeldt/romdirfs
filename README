@@ -1,6 +1,6 @@
 ---======================================---
    romdirfs - ROMDIR filesystem in userspace
-   Copyright (C) 2009 misfire
+   Copyright (C) 2009-2010 Mathias Lafeldt
 ---=========================================---
 
 
@@ -39,19 +39,15 @@ IOP modules to actual files. The filesystem is read-only.
    Build
 ---=====---
 
-To compile and use romdirfs, you need the following Debian packages:
-- cmake >= 2.6
-- gcc
-- fuse-utils
-- libfuse-dev >= 2.6
+romdirfs requires the following Debian packages:
+ - gcc
+ - pkgconfig
+ - libfuse-dev >= 2.6
 
-I recommend doing an out-of-source build:
-$ mkdir build
-$ cd build
-$ cmake ../src/
+To build romdirfs, simply run:
 $ make
 
-To install romdirfs:
+Of course, you can also install it:
 # make install
 
 
@@ -148,16 +144,16 @@ Public License. Please see file COPYING for further information.
 ---==============---
 
 Thanks goes out to the authors of the following programs:
-- RomDir by Alex Lau (http://alexlau.8k.com)
-- SSHFS by Miklos Seredi <miklos@szeredi.hu>
-- WDFS by Jens M. Noedler <noedler@web.de>
+ - RomDir by Alex Lau (http://alexlau.8k.com)
+ - SSHFS by Miklos Seredi <miklos@szeredi.hu>
+ - WDFS by Jens M. Noedler <noedler@web.de>
 
 
 ---====---
    Contact
 ---=======---
 
-misfire [AT] xploderfreax [DOT] de
+misfire [AT] debugon [DOT] org
 
 If you enjoy romdirfs, please consider a PayPal donation to my e-mail address
 above. Thank you.
