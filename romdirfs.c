@@ -297,10 +297,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
- 	D_PRINTF("ROMDIR entries:\n");
+	D_PRINTF("ROMDIR entries:\n");
 	D_PRINTF("%-10s %-8s %-17s %8s %-8s %8s\n",
 		"name", "hash", "offset", "size", "xi_off", "xi_size");
- 	STAILQ_FOREACH(file, &g_romdir, node) {
+	STAILQ_FOREACH(file, &g_romdir, node) {
 		D_PRINTF("%-10s %08x %08x-%08x %8i %08x %8i\n",
 			file->name, file->hash, (uint32_t)file->offset,
 			(uint32_t)(file->offset + file->size),
