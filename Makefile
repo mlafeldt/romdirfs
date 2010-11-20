@@ -2,17 +2,21 @@ CC = gcc
 CFLAGS = -Wall -Werror -O2 -s
 CFLAGS += $(shell pkg-config --cflags fuse)
 LIBS = $(shell pkg-config --libs fuse)
+prefix = $(HOME)
+
 PROG = romdirfs
+OBJS += romdir.o
+OBJS += romdirfs.o
 
 all: $(PROG)
 
 install: $(PROG)
-	install $(PROG) /usr/local/bin
+	install $(PROG) $(prefix)/bin
 
-$(PROG): romdir.o romdirfs.o
+$(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $? $(LIBS)
 
-romdir.o romdirfs.o: romdir.h
+$(OBJS): romdir.h
 
 clean:
-	rm -f $(PROG) *.o
+	$(RM) $(PROG) $(OBJS)
