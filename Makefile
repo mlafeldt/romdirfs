@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -O2 -s
+CFLAGS = -Wall -Werror -O2 -s
 CFLAGS += $(shell pkg-config --cflags fuse)
 LIBS = $(shell pkg-config --libs fuse)
 PROG = romdirfs
