@@ -48,7 +48,14 @@ To build romdirfs, simply run:
 $ make
 
 Of course, you can also install it:
-# make install
+$ make install
+
+CMake is supported too:
+$ mkdir build
+$ cd build/
+$ cmake ..
+$ make
+$ make install
 
 
 ---==---
