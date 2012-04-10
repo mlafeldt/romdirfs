@@ -1,0 +1,7 @@
+language: erlang # no C/shell language support; use least-loaded worker(s)
+
+before_install: sudo apt-get install -y libfuse-dev
+
+install: make install
+
+script: true # no tests yet
