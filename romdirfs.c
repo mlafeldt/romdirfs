@@ -23,7 +23,6 @@
 #include <sys/queue.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <error.h>
 #include <fcntl.h>
 #define FUSE_USE_VERSION  26
 #include <fuse.h>
