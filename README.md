@@ -23,9 +23,9 @@ About romdirfs
 --------------
 
 romdirfs was mainly developed because I was interested in the technology behind
-FUSE (Filesystem in Userspace) and wanted to implement a simple FS on my own.
-(With the FUSE interface, you can easily export a virtual FS to the Linux
-kernel without root privileges.)
+FUSE (Filesystem in Userspace) and wanted to implement a simple filesystem on
+my own. (With the FUSE interface, you can easily export a virtual filesystem to
+the Linux kernel without root privileges.)
 
 romdirfs makes it possible to mount the ROMDIR "filesystem", which can be found
 in PS2 IOPRP images and BIOS dumps, to a directory, thereby mapping the included
@@ -56,6 +56,8 @@ CMake is supported too:
     $ cmake ..
     $ make
     $ make install
+
+Get [MacFUSE] if you want to build and use romdirfs on Mac OS X.
 
 
 Usage
@@ -160,3 +162,6 @@ Contact
 * Web: <https://github.com/mlafeldt/romdirfs>
 * Mail: <mathias.lafeldt@gmail.com>
 * Twitter: [@mlafeldt](https://twitter.com/mlafeldt)
+
+
+[MacFUSE]: http://code.google.com/p/macfuse/
