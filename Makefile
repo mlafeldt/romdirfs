@@ -1,6 +1,6 @@
 CC = gcc
 INSTALL = install
-CFLAGS = -Wall -Wno-unused-but-set-variable -Werror -O2 -s
+CFLAGS = -Wall -Werror -O2 -s
 CFLAGS += $(shell pkg-config --cflags fuse)
 LIBS = $(shell pkg-config --libs fuse)
 prefix = $(HOME)
