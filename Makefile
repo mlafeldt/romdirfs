@@ -1,4 +1,5 @@
 CC = gcc
+INSTALL = install
 CFLAGS = -Wall -Wno-unused-but-set-variable -Werror -O2 -s
 CFLAGS += $(shell pkg-config --cflags fuse)
 LIBS = $(shell pkg-config --libs fuse)
@@ -11,7 +12,8 @@ OBJS += romdirfs.o
 all: $(PROG)
 
 install: $(PROG)
-	install $(PROG) $(prefix)/bin
+	$(INSTALL) -d -m 755 '$(prefix)/bin/'
+	$(INSTALL) $(PROG) '$(prefix)/bin/'
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $? $(LIBS)
