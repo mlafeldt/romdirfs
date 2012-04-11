@@ -57,7 +57,7 @@ CMake is supported too:
     $ make
     $ make install
 
-Get [MacFUSE] if you want to build and use romdirfs on Mac OS X.
+Get [OSXFUSE] or [MacFUSE] if you want to build and use romdirfs on Mac OS X.
 
 
 Usage
@@ -165,3 +165,4 @@ Contact
 
 
 [MacFUSE]: http://code.google.com/p/macfuse/
+[OSXFUSE]: http://osxfuse.github.com/
