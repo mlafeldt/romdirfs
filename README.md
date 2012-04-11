@@ -1,12 +1,19 @@
 romdirfs - ROMDIR filesystem in userspace
 =========================================
 
-Welcome to romdirfs! This Linux program implements a virtual filesystem allowing
-you to access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
+romdirfs is a userspace filesystem for Linux and Mac OS X that allows you to
+access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
+Technically, it can mount the so-called ROMDIR "filesystem" in those PS2 files
+to a directory, thereby mapping the included IOP modules to actual (read-only)
+files.
+
+romdirfs was mainly developed because I was interested in the technology behind
+[FUSE] and wanted to implement a simple filesystem on my own. (With FUSE, you can
+easily export a virtual filesystem to the Linux kernel without root privileges.)
 
 
-Version history
----------------
+History
+-------
 
 v1.1 (Aug 25 2009)
 
@@ -19,34 +26,16 @@ v1.0 (Jul 15 2009)
 * Initial public release
 
 
-About romdirfs
---------------
+Installation
+------------
 
-romdirfs was mainly developed because I was interested in the technology behind
-FUSE (Filesystem in Userspace) and wanted to implement a simple filesystem on
-my own. (With the FUSE interface, you can easily export a virtual filesystem to
-the Linux kernel without root privileges.)
+romdirfs requires a working FUSE implementation. Under Ubuntu/Debian, you can
+install the package `libfuse-dev` (version 2.6 or higher). Get [OSXFUSE] or
+[MacFUSE] if you are on Mac OS X.
 
-romdirfs makes it possible to mount the ROMDIR "filesystem", which can be found
-in PS2 IOPRP images and BIOS dumps, to a directory, thereby mapping the included
-IOP modules to actual files. The filesystem is read-only.
-
-
-Build
------
-
-romdirfs requires the following Debian packages:
-
-* gcc
-* pkgconfig
-* libfuse-dev >= 2.6
-
-To build romdirfs, simply run:
+To build and install romdirfs, simply run:
 
     $ make
-
-Of course, you can also install it:
-
     $ make install
 
 CMake is supported too:
@@ -56,8 +45,6 @@ CMake is supported too:
     $ cmake ..
     $ make
     $ make install
-
-Get [OSXFUSE] or [MacFUSE] if you want to build and use romdirfs on Mac OS X.
 
 
 Usage
@@ -71,15 +58,15 @@ Usage
         -h, --help             print help
         -D, -o romdirfs_debug  print some debugging information
 
-You can get the complete option list with `-h`.
+You can get the complete option list with `--help`.
 
 To unmount the filesystem:
 
     $ fusermount -u <mountpoint>
 
 
-Samples
--------
+Examples
+--------
 
 Mounting a PS2 IOPRP image:
 
@@ -143,10 +130,10 @@ THIS PROGRAM IS NOT LICENSED, ENDORSED, NOR SPONSORED BY SONY COMPUTER
 ENTERTAINMENT, INC. ALL TRADEMARKS ARE PROPERTY OF THEIR RESPECTIVE OWNERS.
 
 romdirfs comes with ABSOLUTELY NO WARRANTY. It is covered by the GNU General
-Public License. Please see file COPYING for further information.
+Public License. Please see file [COPYING] for further information.
 
 
-Special thanks
+Special Thanks
 --------------
 
 Thanks goes out to the authors of the following programs:
@@ -164,5 +151,7 @@ Contact
 * Twitter: [@mlafeldt](https://twitter.com/mlafeldt)
 
 
+[COPYING]: https://github.com/mlafeldt/romdirfs/blob/master/COPYING
+[FUSE]: http://fuse.sourceforge.net/
 [MacFUSE]: http://code.google.com/p/macfuse/
 [OSXFUSE]: http://osxfuse.github.com/
