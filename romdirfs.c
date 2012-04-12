@@ -37,7 +37,7 @@
 
 #define APP_NAME	"romdirfs"
 #define APP_NAME_BIG	"ROMDIRFS"
-#define APP_VERSION	"1.1"
+#define APP_VERSION	"1.2"
 
 static romdir_t g_romdir = STAILQ_HEAD_INITIALIZER(g_romdir);
 
