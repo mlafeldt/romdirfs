@@ -1,7 +1,7 @@
 /*
  * romdirfs.c - ROMDIR filesystem in userspace
  *
- * Copyright (C) 2009 misfire <misfire@xploderfreax.de>
+ * Copyright (C) 2009 Mathias Lafeldt <mathias.lafeldt@gmail.com>
  *
  * This file is part of romdirfs.
  *
