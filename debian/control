@@ -1,0 +1,12 @@
+Source: romdirfs
+Section: utils
+Priority: optional
+Maintainer: Mathias Lafeldt <mathias.lafeldt@gmail.com>
+Standards-Version: 3.9.2.0
+Build-Depends: cdbs, pkg-config, libfuse-dev (>= 2.6)
+Homepage: https://github.com/mlafeldt/romdirfs
+
+Package: romdirfs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Userspace filesystem to access IOP modules in PS2 IOPRP images and BIOS dumps
