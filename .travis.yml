@@ -1,9 +1,10 @@
 language: erlang # no C/shell language support; use least-loaded worker(s)
 
-before_install: sudo apt-get install -y libfuse-dev
+before_install:
+    - sudo apt-get install -y libfuse-dev cdbs
 
 install:
-    - make
-    - sudo make install prefix=/usr/local
+    - dpkg-buildpackage -us -uc
+    - sudo dpkg -i ../romdirfs_*.deb
 
 script: romdirfs --version # no tests yet
