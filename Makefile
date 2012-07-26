@@ -1,6 +1,8 @@
 CC = gcc
 INSTALL = install
-CFLAGS = -Wall -Werror -O2 -s
+STRIP = strip
+
+CFLAGS = -Wall -Werror -O2
 CFLAGS += $(shell pkg-config --cflags fuse)
 LIBS = $(shell pkg-config --libs fuse)
 prefix = $(HOME)
@@ -17,6 +19,7 @@ install: $(PROG)
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $? $(LIBS)
+	$(STRIP) $@
 
 $(OBJS): romdir.h
 
