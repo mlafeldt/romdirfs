@@ -1,23 +1,20 @@
-romdirfs - ROMDIR filesystem in userspace
-=========================================
+# romdirfs - ROMDIR filesystem in userspace
 
-romdirfs is a userspace filesystem for Linux and Mac OS X that allows you to
-access the IOP modules contained in PS2 IOPRP images and BIOS dumps.
-Technically, it can mount the so-called ROMDIR "filesystem" in those PS2 files
-to a directory, thereby mapping the included IOP modules to actual (read-only)
-files.
+romdirfs is a userspace filesystem for Linux and macOS that allows you to
+access the IOP modules contained in PS2 IOPRP images and BIOS dumps. The tool
+can mount the so-called ROMDIR "filesystem" in those PS2 files to a directory,
+thereby mapping the included IOP modules to actual (read-only) files.
 
-romdirfs was mainly developed because I was interested in the technology behind
-[FUSE] and wanted to implement a simple filesystem on my own. (With FUSE, you can
-easily export a virtual filesystem to the Linux kernel without root privileges.)
+I mainly developed romdirfs because I was interested in the technology behind
+[FUSE] and wanted to implement a simple filesystem on my own. (With FUSE, you
+can easily export a virtual filesystem to the Linux kernel without root
+privileges.)
 
-
-Installation
-------------
+## Installation
 
 romdirfs requires a working FUSE implementation. Under Ubuntu/Debian, you can
-install the package `libfuse-dev` (version 2.6 or higher). Get [OSXFUSE] or
-[MacFUSE] if you are on Mac OS X.
+install the package `libfuse-dev` (version 2.6 or higher). Get [FUSE for macOS]
+if you are on macOS.
 
 To build and install romdirfs, simply run:
 
@@ -32,9 +29,7 @@ CMake is supported too:
     $ make
     $ make install
 
-
-Usage
------
+## Usage
 
     usage: romdirfs <file> <mountpoint> [options]
     <file> must be a PS2 IOPRP image or BIOS dump
@@ -46,13 +41,15 @@ Usage
 
 You can get the complete option list with `--help`.
 
-To unmount the filesystem:
+To unmount the filesystem on Linux:
 
     $ fusermount -u <mountpoint>
 
+To unmount the filesystem on macOS:
 
-Examples
---------
+    $ umount <mountpoint>
+
+## Examples
 
 Mounting a PS2 IOPRP image:
 
@@ -108,19 +105,15 @@ Mounting a PS2 BIOS dump:
 
     $ fusermount -u /tmp/romdir/
 
-
-Disclaimer
-----------
+## Disclaimer
 
 THIS PROGRAM IS NOT LICENSED, ENDORSED, NOR SPONSORED BY SONY COMPUTER
 ENTERTAINMENT, INC. ALL TRADEMARKS ARE PROPERTY OF THEIR RESPECTIVE OWNERS.
 
 romdirfs comes with ABSOLUTELY NO WARRANTY. It is covered by the GNU General
-Public License. Please see file [COPYING] for further information.
+Public License. Please see file `COPYING` for further information.
 
-
-Special Thanks
---------------
+## Special Thanks
 
 Thanks goes out to the authors of the following programs:
 
@@ -129,15 +122,5 @@ Thanks goes out to the authors of the following programs:
 * WDFS by Jens M. Noedler (<noedler@web.de>)
 
 
-Contact
--------
-
-* Web: <https://github.com/mlafeldt/romdirfs>
-* Mail: <mathias.lafeldt@gmail.com>
-* Twitter: [@mlafeldt](https://twitter.com/mlafeldt)
-
-
-[COPYING]: https://github.com/mlafeldt/romdirfs/blob/master/COPYING
-[FUSE]: http://fuse.sourceforge.net/
-[MacFUSE]: http://code.google.com/p/macfuse/
-[OSXFUSE]: http://osxfuse.github.com/
+[FUSE]: https://github.com/libfuse/libfuse
+[FUSE for macOS]: https://github.com/osxfuse/osxfuse
