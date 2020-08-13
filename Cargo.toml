@@ -1,0 +1,8 @@
+[package]
+name = "romdirfs"
+version = "0.1.0"
+description = "Userspace filesystem to access IOP modules in PS2 IOPRP images and BIOS dumps"
+authors = ["Mathias Lafeldt <mathias.lafeldt@gmail.com>"]
+edition = "2018"
+
+[dependencies]

@@ -1,5 +1,6 @@
 *.bin
 *.img
 *.o
-build/
-romdirfs
+/build
+/romdirfs
+/target
