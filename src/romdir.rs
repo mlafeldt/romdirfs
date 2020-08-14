@@ -12,20 +12,20 @@ pub enum RomdirError {
 }
 
 #[derive(Clone, Debug)]
-pub struct RomdirArchive<T: io::Read + io::Seek> {
+pub struct Archive<T: io::Read + io::Seek> {
     reader: T,
-    pub files: Vec<RomdirFileData>,
+    pub files: Vec<FileData>,
 }
 
 #[derive(Clone, Debug)]
-pub struct RomdirFileData {
+pub struct FileData {
     pub name: String,
     pub offset: u32,
     pub size: u32,
 }
 
-impl<T: io::Read + io::Seek> RomdirArchive<T> {
-    pub fn new(mut reader: T) -> RomdirResult<RomdirArchive<T>> {
+impl<T: io::Read + io::Seek> Archive<T> {
+    pub fn new(mut reader: T) -> RomdirResult<Archive<T>> {
         let mut files = Vec::new();
         let mut offset = 0;
 
@@ -48,13 +48,13 @@ impl<T: io::Read + io::Seek> RomdirArchive<T> {
             let size = reader.read_u32::<LittleEndian>()?;
 
             if name != "-" {
-                files.push(RomdirFileData { name, offset, size });
+                files.push(FileData { name, offset, size });
             }
 
             // offset must be aligned to 16 bytes
             offset += (size + 15) & !15;
         }
 
-        Ok(RomdirArchive { reader, files })
+        Ok(Archive { reader, files })
     }
 }

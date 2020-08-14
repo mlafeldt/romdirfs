@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::process;
 
@@ -14,7 +15,7 @@ fn main() {
 
     let path = Path::new(&args[0]);
     let file = fs::File::open(&path).unwrap();
-    let archive = romdir::RomdirArchive::new(std::io::BufReader::new(file)).unwrap();
+    let archive = romdir::Archive::new(io::BufReader::new(file)).unwrap();
 
     for f in archive.files.iter() {
         println!("{:10} {:08x}-{:08x} {}", f.name, f.offset, f.offset + f.size, f.size);
