@@ -1,5 +1,9 @@
 use byteorder::{LittleEndian, ReadBytesExt};
-use std::io;
+use std::collections::BTreeMap;
+use std::fs;
+use std::io::prelude::*;
+use std::io::{self, SeekFrom};
+use std::path::Path;
 use thiserror::Error;
 
 pub type RomdirResult<T> = Result<T, RomdirError>;
@@ -9,24 +13,27 @@ pub enum RomdirError {
     /// An error caused by I/O
     #[error(transparent)]
     Io(#[from] io::Error),
+
+    /// The requested file could not be found in the archive
+    #[error("specified file not found in archive")]
+    FileNotFound,
 }
 
 #[derive(Clone, Debug)]
-pub struct Archive<T: io::Read + io::Seek> {
-    reader: T,
-    pub files: Vec<FileData>,
+pub struct Archive<R: Read + Seek> {
+    reader: R,
+    pub files: BTreeMap<String, FileData>,
 }
 
 #[derive(Clone, Debug)]
 pub struct FileData {
-    pub name: String,
     pub offset: u32,
     pub size: u32,
 }
 
-impl<T: io::Read + io::Seek> Archive<T> {
-    pub fn new(mut reader: T) -> RomdirResult<Archive<T>> {
-        let mut files = Vec::new();
+impl<R: Read + Seek> Archive<R> {
+    pub fn new(mut reader: R) -> RomdirResult<Archive<R>> {
+        let mut files = BTreeMap::new();
         let mut offset = 0;
 
         loop {
@@ -34,7 +41,7 @@ impl<T: io::Read + io::Seek> Archive<T> {
             reader.read_exact(&mut name_raw)?;
 
             if files.is_empty() && &name_raw[0..6] != b"RESET\0" {
-                reader.seek(io::SeekFrom::Current(6))?;
+                reader.seek(SeekFrom::Current(6))?;
                 continue;
             }
 
@@ -48,7 +55,7 @@ impl<T: io::Read + io::Seek> Archive<T> {
             let size = reader.read_u32::<LittleEndian>()?;
 
             if name != "-" {
-                files.push(FileData { name, offset, size });
+                files.insert(name, FileData { offset, size });
             }
 
             // offset must be aligned to 16 bytes
@@ -56,5 +63,35 @@ impl<T: io::Read + io::Seek> Archive<T> {
         }
 
         Ok(Archive { reader, files })
+    }
+
+    pub fn file_names(&self) -> Vec<String> {
+        self.files.keys().cloned().collect()
+    }
+
+    pub fn extract_all<P: AsRef<Path>>(&mut self, dir: P) -> RomdirResult<()> {
+        for name in &self.file_names() {
+            let outpath = dir.as_ref().join(name);
+            self.extract_file(name, outpath)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn extract_file<P: AsRef<Path>>(&mut self, name: &str, path: P) -> RomdirResult<()> {
+        let data = match self.files.get(name) {
+            Some(data) => data,
+            None => {
+                return Err(RomdirError::FileNotFound);
+            }
+        };
+
+        self.reader.seek(SeekFrom::Start(data.offset as u64))?;
+        let mut take = self.reader.by_ref().take(data.size as u64);
+
+        let mut outfile = fs::File::create(&path)?;
+        io::copy(&mut take, &mut outfile)?;
+
+        Ok(())
     }
 }
