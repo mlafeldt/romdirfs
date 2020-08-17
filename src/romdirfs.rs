@@ -1,63 +1,63 @@
 use fuse::{FileAttr, FileType, Filesystem, ReplyAttr, ReplyData, ReplyDirectory, ReplyEntry, Request};
 use libc::ENOENT;
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::io::prelude::*;
 use std::time::{Duration, UNIX_EPOCH};
 
-const TTL: Duration = Duration::from_secs(1); // 1 second
-
-const HELLO_DIR_ATTR: FileAttr = FileAttr {
-    ino: 1,
-    size: 0,
-    blocks: 0,
-    atime: UNIX_EPOCH, // 1970-01-01 00:00:00
-    mtime: UNIX_EPOCH,
-    ctime: UNIX_EPOCH,
-    crtime: UNIX_EPOCH,
-    kind: FileType::Directory,
-    perm: 0o755,
-    nlink: 2,
-    uid: 501,
-    gid: 20,
-    rdev: 0,
-    flags: 0,
-};
-
-const HELLO_TXT_CONTENT: &str = "Hello World!\n";
-
-const HELLO_TXT_ATTR: FileAttr = FileAttr {
-    ino: 2,
-    size: 13,
-    blocks: 1,
-    atime: UNIX_EPOCH, // 1970-01-01 00:00:00
-    mtime: UNIX_EPOCH,
-    ctime: UNIX_EPOCH,
-    crtime: UNIX_EPOCH,
-    kind: FileType::RegularFile,
-    perm: 0o644,
-    nlink: 1,
-    uid: 501,
-    gid: 20,
-    rdev: 0,
-    flags: 0,
-};
-
 use crate::romdir::Archive;
+
+const TTL: Duration = Duration::from_secs(1);
 
 pub struct RomdirFS<R: Read + Seek> {
     archive: Archive<R>,
+    ino_map: BTreeMap<u64, String>,
 }
 
 impl<R: Read + Seek> RomdirFS<R> {
     pub fn new(archive: Archive<R>) -> Self {
-        RomdirFS { archive }
+        let mut ino_map = BTreeMap::new();
+
+        for (i, name) in archive.file_names_iter().enumerate() {
+            ino_map.insert((i + 2) as u64, name.to_string());
+        }
+
+        RomdirFS { archive, ino_map }
     }
 }
 
 impl<R: Read + Seek> Filesystem for RomdirFS<R> {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
         if parent == 1 && self.archive.files.contains_key(name.to_str().unwrap()) {
-            reply.entry(&TTL, &HELLO_TXT_ATTR, 0);
+            let md = self.archive.metadata(name.to_str().unwrap()).unwrap();
+
+            let mut ino = 0u64;
+            for (i, n) in &self.ino_map {
+                if name.to_str().unwrap() == n {
+                    ino = *i;
+                }
+            }
+
+            reply.entry(
+                &TTL,
+                &FileAttr {
+                    ino: ino,
+                    size: md.size as u64,
+                    blocks: 0,
+                    atime: UNIX_EPOCH,
+                    mtime: UNIX_EPOCH,
+                    ctime: UNIX_EPOCH,
+                    crtime: UNIX_EPOCH,
+                    kind: FileType::RegularFile,
+                    perm: libc::S_IFREG as u16 | 0o444,
+                    nlink: 1,
+                    uid: unsafe { libc::getuid() },
+                    gid: unsafe { libc::getgid() },
+                    rdev: 0,
+                    flags: 0,
+                },
+                0,
+            );
         } else {
             reply.error(ENOENT);
         }
@@ -65,17 +65,64 @@ impl<R: Read + Seek> Filesystem for RomdirFS<R> {
 
     fn getattr(&mut self, _req: &Request, ino: u64, reply: ReplyAttr) {
         match ino {
-            1 => reply.attr(&TTL, &HELLO_DIR_ATTR),
-            2..=100 => reply.attr(&TTL, &HELLO_TXT_ATTR),
+            ino if self.ino_map.contains_key(&ino) => {
+                let md = self.archive.metadata(self.ino_map.get(&ino).unwrap()).unwrap();
+                reply.attr(
+                    &TTL,
+                    &FileAttr {
+                        ino: ino,
+                        size: md.size as u64,
+                        blocks: 0,
+                        atime: UNIX_EPOCH,
+                        mtime: UNIX_EPOCH,
+                        ctime: UNIX_EPOCH,
+                        crtime: UNIX_EPOCH,
+                        kind: FileType::RegularFile,
+                        perm: libc::S_IFREG as u16 | 0o444,
+                        nlink: 1,
+                        uid: unsafe { libc::getuid() },
+                        gid: unsafe { libc::getgid() },
+                        rdev: 0,
+                        flags: 0,
+                    },
+                )
+            }
+            1 => reply.attr(
+                &TTL,
+                &FileAttr {
+                    ino: ino,
+                    size: 0,
+                    blocks: 0,
+                    atime: UNIX_EPOCH,
+                    mtime: UNIX_EPOCH,
+                    ctime: UNIX_EPOCH,
+                    crtime: UNIX_EPOCH,
+                    kind: FileType::Directory,
+                    perm: libc::S_IFDIR as u16 | 0o555,
+                    nlink: 2,
+                    uid: unsafe { libc::getuid() },
+                    gid: unsafe { libc::getgid() },
+                    rdev: 0,
+                    flags: 0,
+                },
+            ),
             _ => reply.error(ENOENT),
         }
     }
 
-    fn read(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, _size: u32, reply: ReplyData) {
-        if ino > 1 {
-            let name = &self.archive.file_names()[ino as usize - 1];
-            let data = self.archive.read_file(name).unwrap();
-            reply.data(&data);
+    fn read(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, size: u32, reply: ReplyData) {
+        if self.ino_map.contains_key(&ino) {
+            let data = self.archive.read_file(self.ino_map.get(&ino).unwrap()).unwrap();
+
+            println!("{} {} {}", offset, size, data.len());
+
+            if offset as usize >= data.len() {
+                reply.data(&[]);
+                return;
+            }
+
+            // let data = &data[..std::cmp::min(data.len(), size as usize)];
+            reply.data(&data[offset as usize..]);
         } else {
             reply.error(ENOENT);
         }
@@ -89,8 +136,8 @@ impl<R: Read + Seek> Filesystem for RomdirFS<R> {
 
         let mut entries = vec![(1, FileType::Directory, "."), (1, FileType::Directory, "..")];
 
-        for (i, name) in self.archive.file_names_iter().enumerate() {
-            entries.push((i + 1, FileType::RegularFile, name));
+        for (i, name) in &self.ino_map {
+            entries.push((*i, FileType::RegularFile, name));
         }
 
         for (i, entry) in entries.into_iter().enumerate().skip(offset as usize) {

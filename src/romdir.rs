@@ -97,14 +97,16 @@ impl<R: Read + Seek> Archive<R> {
     pub fn read_file(&mut self, name: &str) -> RomdirResult<Vec<u8>> {
         let md = self.metadata(name)?;
 
-        let mut buf = Vec::with_capacity(md.size as usize);
         self.reader.seek(SeekFrom::Start(md.offset as u64))?;
-        self.reader.read_exact(&mut buf)?;
+        let mut take = self.reader.by_ref().take(md.size as u64);
+
+        let mut buf = Vec::with_capacity(md.size as usize);
+        take.read_to_end(&mut buf)?;
 
         Ok(buf)
     }
 
-    fn metadata(&self, name: &str) -> RomdirResult<FileMetadata> {
+    pub fn metadata(&self, name: &str) -> RomdirResult<FileMetadata> {
         match self.files.get(name) {
             Some(md) => Ok(md.clone()),
             None => {
