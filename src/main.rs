@@ -1,4 +1,5 @@
 use std::env;
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
@@ -6,6 +7,7 @@ use std::path::Path;
 use std::process;
 
 mod romdir;
+mod romdirfs;
 
 fn main() {
     let args: Vec<_> = env::args().skip(1).collect();
@@ -15,6 +17,8 @@ fn main() {
     }
 
     let path = Path::new(&args[0]);
+    let mountpoint = Path::new(&args[1]);
+
     let mut f = fs::File::open(&path).unwrap();
     let mut buf = Vec::with_capacity(4 * 1024 * 1024);
     f.read_to_end(&mut buf).unwrap();
@@ -31,6 +35,10 @@ fn main() {
         );
     }
 
-    archive.extract_all("/tmp/romdir").unwrap();
-    archive.extract_file("VERSTR", "/tmp/verstr.bin").unwrap();
+    // archive.extract_all("/tmp/romdir").unwrap();
+    // archive.extract_file("VERSTR", "/tmp/verstr.bin").unwrap();
+
+    // let fuse_opts: Vec<&OsStr> = vec![&OsStr::new("-f"), &OsStr::new("-D")];
+
+    fuse::mount(romdirfs::RomdirFS::new(archive), &mountpoint, &[]).unwrap();
 }

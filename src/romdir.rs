@@ -22,11 +22,11 @@ pub enum RomdirError {
 #[derive(Clone, Debug)]
 pub struct Archive<R: Read + Seek> {
     reader: R,
-    pub files: BTreeMap<String, FileData>,
+    pub files: BTreeMap<String, FileMetadata>,
 }
 
-#[derive(Clone, Debug)]
-pub struct FileData {
+#[derive(Copy, Clone, Debug)]
+pub struct FileMetadata {
     pub offset: u32,
     pub size: u32,
 }
@@ -55,7 +55,7 @@ impl<R: Read + Seek> Archive<R> {
             let size = reader.read_u32::<LittleEndian>()?;
 
             if name != "-" {
-                files.insert(name, FileData { offset, size });
+                files.insert(name, FileMetadata { offset, size });
             }
 
             // offset must be aligned to 16 bytes
@@ -69,6 +69,10 @@ impl<R: Read + Seek> Archive<R> {
         self.files.keys().cloned().collect()
     }
 
+    pub fn file_names_iter(&self) -> impl Iterator<Item = &str> {
+        self.files.keys().map(|s| s.as_str())
+    }
+
     pub fn extract_all<P: AsRef<Path>>(&mut self, dir: P) -> RomdirResult<()> {
         for name in &self.file_names() {
             let outpath = dir.as_ref().join(name);
@@ -79,19 +83,33 @@ impl<R: Read + Seek> Archive<R> {
     }
 
     pub fn extract_file<P: AsRef<Path>>(&mut self, name: &str, path: P) -> RomdirResult<()> {
-        let data = match self.files.get(name) {
-            Some(data) => data,
-            None => {
-                return Err(RomdirError::FileNotFound);
-            }
-        };
+        let md = self.metadata(name)?;
 
-        self.reader.seek(SeekFrom::Start(data.offset as u64))?;
-        let mut take = self.reader.by_ref().take(data.size as u64);
+        self.reader.seek(SeekFrom::Start(md.offset as u64))?;
+        let mut take = self.reader.by_ref().take(md.size as u64);
 
         let mut outfile = fs::File::create(&path)?;
         io::copy(&mut take, &mut outfile)?;
 
         Ok(())
+    }
+
+    pub fn read_file(&mut self, name: &str) -> RomdirResult<Vec<u8>> {
+        let md = self.metadata(name)?;
+
+        let mut buf = Vec::with_capacity(md.size as usize);
+        self.reader.seek(SeekFrom::Start(md.offset as u64))?;
+        self.reader.read_exact(&mut buf)?;
+
+        Ok(buf)
+    }
+
+    fn metadata(&self, name: &str) -> RomdirResult<FileMetadata> {
+        match self.files.get(name) {
+            Some(md) => Ok(md.clone()),
+            None => {
+                return Err(RomdirError::FileNotFound);
+            }
+        }
     }
 }

@@ -7,6 +7,58 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08c48aae112d48ed9f069b33538ea9e3e90aa263cfa3d1c24309612b1f7472de"
 
 [[package]]
+name = "cfg-if"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
+
+[[package]]
+name = "fuse"
+version = "0.4.0-dev"
+source = "git+https://github.com/zargony/fuse-rs#39fde4a5c47ce370d228ac190f950bd835db7f47"
+dependencies = [
+ "fuse-abi",
+ "fuse-sys",
+ "libc",
+ "log",
+ "thread-scoped",
+]
+
+[[package]]
+name = "fuse-abi"
+version = "0.4.0-dev"
+source = "git+https://github.com/zargony/fuse-rs#39fde4a5c47ce370d228ac190f950bd835db7f47"
+
+[[package]]
+name = "fuse-sys"
+version = "0.4.0-dev"
+source = "git+https://github.com/zargony/fuse-rs#39fde4a5c47ce370d228ac190f950bd835db7f47"
+dependencies = [
+ "pkg-config",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.74"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2f02823cf78b754822df5f7f268fb59822e7296276d3e069d8e8cb26a14bd10"
+
+[[package]]
+name = "log"
+version = "0.4.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fabed175da42fed1fa0746b0ea71f412aa9d35e76e95e59b192c64b9dc2bf8b"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
+name = "pkg-config"
+version = "0.3.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d36492546b6af1463394d46f0c834346f31548646f6ba10849802c9c9a27ac33"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -29,6 +81,8 @@ name = "romdirfs"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "fuse",
+ "libc",
  "thiserror",
 ]
 
@@ -62,6 +116,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "thread-scoped"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcbb6aa301e5d3b0b5ef639c9a9c7e2f1c944f177b460c04dc24c69b1fa2bd99"
 
 [[package]]
 name = "unicode-xid"
