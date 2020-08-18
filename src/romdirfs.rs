@@ -67,7 +67,7 @@ impl<R: Read + Seek> Filesystem for RomdirFS<R> {
     }
 
     fn readdir(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, mut reply: ReplyDirectory) {
-        if ino != 1 {
+        if ino != ROOT_INO {
             reply.error(ENOENT);
             return;
         }
