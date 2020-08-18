@@ -1,5 +1,4 @@
 use std::env;
-use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
@@ -23,7 +22,7 @@ fn main() {
     let mut buf = Vec::with_capacity(4 * 1024 * 1024);
     f.read_to_end(&mut buf).unwrap();
 
-    let mut archive = romdir::Archive::new(io::Cursor::new(buf)).unwrap();
+    let archive = romdir::Archive::new(io::Cursor::new(buf)).unwrap();
 
     for (name, data) in archive.files.iter() {
         println!(

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::collections::BTreeMap;
 use std::fs;
@@ -108,10 +110,8 @@ impl<R: Read + Seek> Archive<R> {
 
     pub fn metadata(&self, name: &str) -> RomdirResult<FileMetadata> {
         match self.files.get(name) {
-            Some(md) => Ok(md.clone()),
-            None => {
-                return Err(RomdirError::FileNotFound);
-            }
+            Some(md) => Ok(*md),
+            None => Err(RomdirError::FileNotFound),
         }
     }
 }

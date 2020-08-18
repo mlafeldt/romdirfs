@@ -89,8 +89,8 @@ impl<R: Read + Seek> Filesystem for RomdirFS<R> {
 
 fn make_file_attr(ino: u64, size: u64) -> FileAttr {
     FileAttr {
-        ino: ino,
-        size: size,
+        ino,
+        size,
         blocks: 0,
         atime: UNIX_EPOCH,
         mtime: UNIX_EPOCH,
@@ -108,7 +108,7 @@ fn make_file_attr(ino: u64, size: u64) -> FileAttr {
 
 fn make_dir_attr(ino: u64) -> FileAttr {
     FileAttr {
-        ino: ino,
+        ino,
         size: 0,
         blocks: 0,
         atime: UNIX_EPOCH,
