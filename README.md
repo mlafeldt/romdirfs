@@ -10,6 +10,8 @@ I mainly developed romdirfs because I was interested in the technology behind
 can easily export a virtual filesystem to the Linux kernel without root
 privileges.)
 
+More recently, I created a [Rust spike] for the same reason.
+
 ## Installation
 
 romdirfs requires a working FUSE implementation. Under Ubuntu/Debian, you can
@@ -124,3 +126,4 @@ Thanks goes out to the authors of the following programs:
 
 [FUSE]: https://github.com/libfuse/libfuse
 [FUSE for macOS]: https://github.com/osxfuse/osxfuse
+[Rust spike]: https://github.com/mlafeldt/romdirfs/pull/2
