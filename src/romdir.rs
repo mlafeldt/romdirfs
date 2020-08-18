@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::collections::BTreeMap;
 use std::fs;

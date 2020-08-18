@@ -36,37 +36,38 @@ impl<R: Read + Seek> RomdirFS<R> {
 }
 
 impl<R: Read + Seek> Filesystem for RomdirFS<R> {
-    fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
-        if parent == ROOT_INO && self.archive.files.contains_key(name.to_str().unwrap()) {
-            let md = self.archive.metadata(name.to_str().unwrap()).unwrap();
-            let ino = self.name_map[name.to_str().unwrap()];
-            reply.entry(&TTL, &make_file_attr(ino, md.size as u64), 0);
+    fn lookup(&mut self, _req: &Request<'_>, parent: u64, name: &OsStr, reply: ReplyEntry) {
+        if parent == ROOT_INO {
+            if let Some(ino) = self.name_map.get(name.to_str().unwrap()) {
+                let md = self.archive.metadata(name.to_str().unwrap()).unwrap();
+                reply.entry(&TTL, &make_file_attr(*ino, md.size as u64), 0);
+                return;
+            }
+        }
+        reply.error(ENOENT);
+    }
+
+    fn getattr(&mut self, _req: &Request<'_>, ino: u64, reply: ReplyAttr) {
+        if let Some(name) = self.ino_map.get(&ino) {
+            let md = self.archive.metadata(name).unwrap();
+            reply.attr(&TTL, &make_file_attr(ino, md.size as u64))
+        } else if ino == ROOT_INO {
+            reply.attr(&TTL, &make_dir_attr(ino));
         } else {
             reply.error(ENOENT);
         }
     }
 
-    fn getattr(&mut self, _req: &Request, ino: u64, reply: ReplyAttr) {
-        match ino {
-            ino if self.ino_map.contains_key(&ino) => {
-                let md = self.archive.metadata(self.ino_map.get(&ino).unwrap()).unwrap();
-                reply.attr(&TTL, &make_file_attr(ino, md.size as u64))
-            }
-            ROOT_INO => reply.attr(&TTL, &make_dir_attr(ino)),
-            _ => reply.error(ENOENT),
-        }
-    }
-
-    fn read(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, size: u32, reply: ReplyData) {
-        if self.ino_map.contains_key(&ino) {
-            let data = self.archive.read_file(self.ino_map.get(&ino).unwrap()).unwrap();
+    fn read(&mut self, _req: &Request<'_>, ino: u64, _fh: u64, offset: i64, size: u32, reply: ReplyData) {
+        if let Some(name) = self.ino_map.get(&ino) {
+            let data = self.archive.read_file(name).unwrap();
             reply.data(&data[offset as usize..offset as usize + size as usize]);
         } else {
             reply.error(ENOENT);
         }
     }
 
-    fn readdir(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, mut reply: ReplyDirectory) {
+    fn readdir(&mut self, _req: &Request<'_>, ino: u64, _fh: u64, offset: i64, mut reply: ReplyDirectory) {
         if ino != ROOT_INO {
             reply.error(ENOENT);
             return;
