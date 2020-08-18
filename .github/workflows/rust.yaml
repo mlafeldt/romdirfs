@@ -22,6 +22,9 @@ jobs:
           components: rustfmt, clippy
           override: true
 
+      - name: Install libfuse
+        run: sudo apt-get install libfuse-dev
+
       - name: Get sources
         uses: actions/checkout@v2
 
