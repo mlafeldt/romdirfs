@@ -99,7 +99,7 @@ static int romdirfs_getattr(const char *path, struct stat *stbuf)
 	if (*path != '/')
 		return -ENOENT;
 	if (path[1] == '\0') { /* root dir */
-		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_mode = S_IFDIR | 0555;
 		stbuf->st_nlink = 2;
 		return 0;
 	} else {
