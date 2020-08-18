@@ -13,17 +13,25 @@ const ROOT_INO: u64 = 1;
 pub struct RomdirFS<R: Read + Seek> {
     archive: Archive<R>,
     ino_map: HashMap<u64, String>,
+    name_map: HashMap<String, u64>,
 }
 
 impl<R: Read + Seek> RomdirFS<R> {
     pub fn new(archive: Archive<R>) -> Self {
         let mut ino_map = HashMap::new();
+        let mut name_map = HashMap::new();
 
         for (i, name) in archive.file_names_iter().enumerate() {
-            ino_map.insert(ROOT_INO + (i as u64) + 1, name.to_string());
+            let ino = ROOT_INO + (i as u64) + 1;
+            ino_map.insert(ino, name.to_string());
+            name_map.insert(name.to_string(), ino);
         }
 
-        RomdirFS { archive, ino_map }
+        RomdirFS {
+            archive,
+            ino_map,
+            name_map,
+        }
     }
 }
 
@@ -31,14 +39,7 @@ impl<R: Read + Seek> Filesystem for RomdirFS<R> {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
         if parent == ROOT_INO && self.archive.files.contains_key(name.to_str().unwrap()) {
             let md = self.archive.metadata(name.to_str().unwrap()).unwrap();
-
-            let mut ino = 0u64;
-            for (i, n) in &self.ino_map {
-                if name.to_str().unwrap() == n {
-                    ino = *i;
-                }
-            }
-
+            let ino = self.name_map[name.to_str().unwrap()];
             reply.entry(&TTL, &make_file_attr(ino, md.size as u64), 0);
         } else {
             reply.error(ENOENT);
